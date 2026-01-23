@@ -54,49 +54,38 @@ android {
 }
 
 dependencies {
-    // ✅ Compose BOM — sets all Compose versions in sync
     implementation platform('androidx.compose:compose-bom:2023.10.01')
 
-    // ✅ Jetpack Compose core libraries
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.material:material'
-    implementation 'androidx.compose.material:material-icons-extended' // <- this will fix visibility icon issues
+    implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
-    // ✅ Material 3 (you’re using both material2 and material3 — allowed!)
     implementation 'androidx.compose.material3:material3'
 
-    // ✅ Navigation
     implementation "androidx.navigation:navigation-compose:2.7.5"
     implementation 'androidx.navigation:navigation-fragment-ktx:2.7.5'
     implementation 'androidx.navigation:navigation-ui-ktx:2.7.5'
 
-    // ✅ Lifecycle
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1"
 
-    // ✅ Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 
-    // ✅ Room (Database)
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
 
-    // ✅ Datastore
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
-    // ✅ Android core and compatibility
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.android.material:material:1.8.0'
 
-    // ✅ Compose graphics (if you’re doing custom visuals)
     implementation 'androidx.compose.ui:ui-graphics'
 
-    // ✅ Testing dependencies
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation platform('androidx.compose:compose-bom:2023.10.01')
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
