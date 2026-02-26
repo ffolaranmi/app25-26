@@ -1,36 +1,34 @@
 package com.example.smartvoice.data
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Delete
+import androidx.room.*
 
 @Dao
 interface UserDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE) // Prevents duplicate users by replacing conflicts
-    suspend fun insert(entity: User)
 
-    @Query("SELECT * FROM user WHERE email = :email AND password = :password LIMIT 1")
-    suspend fun getUserByEmailAndPassword(email: String, password: String): User?  // Allows login validation
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(user: User)
 
-    @Query("SELECT COUNT(*) FROM user WHERE email = :email")
-    suspend fun checkIfEmailExists(email: String): Int  // Checks if an email is already registered
-
-    @Query("SELECT * FROM user WHERE email = :email LIMIT 1")
-    suspend fun getUserByEmail(email: String): User?
+    @Update
+    suspend fun update(user: User)
 
     @Delete
     suspend fun delete(user: User)
 
-    @Dao
-    interface UserDao {
-        @Query("SELECT * FROM user LIMIT 1")
-        suspend fun getUser(): User
-    }
+    @Query("SELECT * FROM user WHERE email = :email LIMIT 1")
+    suspend fun getUserByEmail(email: String): User?
 
-    @Query("SELECT * FROM user LIMIT 1")
-    suspend fun getUser(): User?
+    @Query("SELECT * FROM user WHERE username = :username LIMIT 1")
+    suspend fun getUserByUsername(username: String): User?
 
+    @Query("SELECT * FROM user WHERE username = :username AND password = :password LIMIT 1")
+    suspend fun getUserByUsernameAndPassword(username: String, password: String): User?
 
+    @Query("SELECT COUNT(*) FROM user WHERE email = :email")
+    suspend fun checkIfEmailExists(email: String): Int
+
+    @Query("SELECT COUNT(*) FROM user WHERE username = :username")
+    suspend fun checkIfUsernameExists(username: String): Int
+
+    @Query("SELECT * FROM user ORDER BY id DESC LIMIT 1")
+    suspend fun getLatestUser(): User?
 }

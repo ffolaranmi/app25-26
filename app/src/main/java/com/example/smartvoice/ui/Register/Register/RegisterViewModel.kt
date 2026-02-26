@@ -10,44 +10,55 @@ import kotlinx.coroutines.launch
 class RegisterViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
 
     fun registerUser(
-        chinum: String,
-        patientName: String,
-        age: Int,
-        currentStatus: String,
+        firstName: String,
+        lastName: String,
+        phone: String,
+        username: String,
         email: String,
         password: String,
-        onResult: (Boolean) -> Unit // Callback to notify success/failure
+        onResult: (Boolean) -> Unit
     ) {
-        if (chinum.isBlank() || patientName.isBlank() || currentStatus.isBlank() || email.isBlank() || password.isBlank()) {
+        if (
+            firstName.isBlank() ||
+            lastName.isBlank() ||
+            phone.isBlank() ||
+            username.isBlank() ||
+            email.isBlank() ||
+            password.isBlank()
+        ) {
             Log.e("RegisterViewModel", "Error: One or more fields are empty.")
-            onResult(false) // Fail if any field is blank
-            return
-        }
-
-        if (age <= 0) {
-            Log.e("RegisterViewModel", "Error: Age must be a positive number.")
-            onResult(false) // Fail if age is not valid
+            onResult(false)
             return
         }
 
         viewModelScope.launch {
             try {
+                val emailTrimmed = email.trim()
+                val usernameTrimmed = username.trim()
+
+                val emailExists = database.userDao().checkIfEmailExists(emailTrimmed) > 0
+                val usernameExists = database.userDao().checkIfUsernameExists(usernameTrimmed) > 0
+
+                if (emailExists || usernameExists) {
+                    Log.e("RegisterViewModel", "Error: Email or username already exists.")
+                    onResult(false)
+                    return@launch
+                }
+
                 val newUser = User(
-                    chinum = chinum,
-                    patientName = patientName,
-                    age = age,
-                    currentstatus = currentStatus,
-                    email = email,
+                    username = usernameTrimmed,
+                    phone = phone.trim(),
+                    email = emailTrimmed,
                     password = password
                 )
 
-                database.userDao().insert(newUser) // Insert into Room Database
+                database.userDao().insert(newUser)
                 Log.d("RegisterViewModel", "User registered successfully: $newUser")
-                onResult(true) // Success
+                onResult(true)
 
             } catch (e: Exception) {
                 Log.e("RegisterViewModel", "Error registering user", e)
-                onResult(false) // Fail on exception
+                onResult(false)
             }
         }
     }

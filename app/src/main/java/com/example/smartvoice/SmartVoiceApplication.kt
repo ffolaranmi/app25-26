@@ -25,7 +25,6 @@ class SmartVoiceApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Initialize the Room database here (if necessary)
         container = AppDataContainer(this)
     }
 }

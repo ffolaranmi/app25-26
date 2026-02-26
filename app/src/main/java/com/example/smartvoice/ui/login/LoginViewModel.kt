@@ -7,10 +7,14 @@ import kotlinx.coroutines.launch
 
 class LoginViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
 
-    fun loginUser(email: String, password: String, onResult: (Boolean) -> Unit) {
+    fun loginUser(usernameInput: String, password: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val user = database.userDao().getUserByEmailAndPassword(email, password)
-            onResult(user != null)  // Returns true if user exists, false otherwise
+            val trimmed = usernameInput.trim()
+
+            val normalizedUsername = if (trimmed.startsWith("@")) trimmed else "@$trimmed"
+
+            val user = database.userDao().getUserByUsernameAndPassword(normalizedUsername, password)
+            onResult(user != null)
         }
     }
 }

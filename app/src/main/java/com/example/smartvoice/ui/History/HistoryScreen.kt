@@ -56,12 +56,12 @@ fun HistoryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.clearAllDiagnoses() },
-                containerColor = Color(0xFFB71C1C), // Deep red
+                containerColor = Color(0xFFB71C1C),
                 modifier = Modifier
                     .height(56.dp)
                     .width(180.dp)
                     .padding(8.dp)
-                    .clip(MaterialTheme.shapes.extraLarge) // Large rounded corners
+                    .clip(MaterialTheme.shapes.extraLarge)
             ) {
                 Text(
                     text = "Clear All",
@@ -115,16 +115,16 @@ fun VoiceSampleBubble(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { showDialog.value = true }, // Open dialog on click
+            .clickable { showDialog.value = true },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6)) // Soft lilac
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = "VOICE SAMPLE DATE: $recordingDate",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = Color(0xFF512DA8) // Deep purple text
+                color = Color(0xFF512DA8)
             )
             Text(
                 text = "PATIENT NAME: $patientName",
@@ -143,7 +143,6 @@ fun VoiceSampleBubble(
         }
     }
 
-    // Show dialog when showDialog is true
     if (showDialog.value) {
         AlertDialog(
             onDismissRequest = { showDialog.value = false },

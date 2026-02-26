@@ -20,7 +20,7 @@ class HistoryViewModel(private val smartVoiceDatabase: SmartVoiceDatabase) : Vie
     fun clearAllDiagnoses() {
         viewModelScope.launch(Dispatchers.IO) {
             smartVoiceDatabase.diagnosisDao().clearAllDiagnoses()
-            loadDiagnoses() // Refresh the state
+            loadDiagnoses()
         }
     }
 }

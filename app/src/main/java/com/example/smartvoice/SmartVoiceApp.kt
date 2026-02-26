@@ -20,13 +20,13 @@ import com.example.smartvoice.data.SmartVoiceDatabase
 @Composable
 fun SmartVoiceApp(
     application: SmartVoiceApplication,
-    database: SmartVoiceDatabase, // Ensure database is passed
+    database: SmartVoiceDatabase,
     navController: NavHostController = rememberNavController()
 ) {
     SmartVoiceNavHost(
         navController = navController,
         application = application,
-        database = database // Fix: Pass database
+        database = database
     )
 }
 

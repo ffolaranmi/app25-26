@@ -6,10 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
-import com.example.smartvoice.data.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 class AccountInfoViewModel(
@@ -18,35 +16,48 @@ class AccountInfoViewModel(
 ) : ViewModel() {
 
     private val _user = MutableStateFlow<User?>(null)
-    val user: StateFlow<User?> get() = _user
+    val user: StateFlow<User?> = _user
 
     init {
-        loadUserInfo()
+        refreshUser()
     }
 
-    private fun loadUserInfo() {
+    private fun refreshUser() {
         viewModelScope.launch {
-            val userPrefs = UserPreferences(context)
-            val savedEmail = userPrefs.getUserEmail().firstOrNull()
-            savedEmail?.let { email ->
-                val userFromDb = database.userDao().getUserByEmail(email)
-                _user.value = userFromDb
+            try {
+                _user.value = database.userDao().getLatestUser()
+            } catch (e: Exception) {
+                Log.e("AccountInfoViewModel", "Error loading user", e)
+                _user.value = null
             }
         }
     }
 
-    suspend fun resetPassword(email: String, currentPassword: String, newPassword: String): Boolean {
+    suspend fun deleteAccount(): Boolean {
         return try {
-            val user = database.userDao().getUserByEmailAndPassword(email, currentPassword)
-            if (user != null) {
-                val updatedUser = user.copy(password = newPassword)
-                database.userDao().insert(updatedUser)
-                Log.d("AccountInfoViewModel", "Password updated for user: ${user.email}")
-                true
-            } else {
-                Log.e("AccountInfoViewModel", "Incorrect current password or user not found.")
-                false
-            }
+            val u = _user.value ?: return false
+            database.userDao().delete(u)
+            _user.value = null
+            true
+        } catch (e: Exception) {
+            Log.e("AccountInfoViewModel", "Error deleting account", e)
+            false
+        }
+    }
+
+    suspend fun resetPassword(
+        email: String,
+        currentPassword: String,
+        newPassword: String
+    ): Boolean {
+        return try {
+            val userByEmail = database.userDao().getUserByEmail(email) ?: return false
+            if (userByEmail.password != currentPassword) return false
+
+            val updated = userByEmail.copy(password = newPassword)
+            database.userDao().update(updated)
+            _user.value = updated
+            true
         } catch (e: Exception) {
             Log.e("AccountInfoViewModel", "Error resetting password", e)
             false

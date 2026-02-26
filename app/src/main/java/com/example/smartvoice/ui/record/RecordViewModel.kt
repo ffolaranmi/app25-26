@@ -1,53 +1,49 @@
 package com.example.smartvoice.ui.record
 
-import com.example.smartvoice.data.User
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.data.SmartVoiceDatabase
+import com.example.smartvoice.data.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.media.MediaRecorder
-import android.os.Environment
 import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
-class RecordViewModel(private val smartVoiceDatabase: SmartVoiceDatabase) : ViewModel() {
-    private var mediaRecorder: MediaRecorder? = null
-    private var outputFile: String = ""
+class RecordViewModel(
+    private val smartVoiceDatabase: SmartVoiceDatabase
+) : ViewModel() {
 
-    suspend fun startRecording() {
-        val currentUser = getCurrentUser()
-        if (currentUser != null) {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val fileName = "${currentUser.chinum}_$timeStamp.3gp"
-            outputFile = File(Environment.getExternalStorageDirectory(), fileName).absolutePath
+    private val wavRecorder = WavRecorder()
+    private var lastWavFile: File? = null
 
-            try {
-                mediaRecorder = MediaRecorder().apply {
-                    setAudioSource(MediaRecorder.AudioSource.MIC)
-                    setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                    setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                    setOutputFile(outputFile)
-                    setMaxDuration(3000) // 3 seconds
-                    prepare()
-                    start()
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+    suspend fun startRecording(context: Context) {
+        val currentUser = getCurrentUser() ?: return
+
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+
+        val safeUserTag = currentUser.username
+            .removePrefix("@")
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+
+        val fileName = "${safeUserTag}_$timeStamp.wav"
+
+        val outFile = File(context.filesDir, fileName)
+        lastWavFile = outFile
+
+        withContext(Dispatchers.IO) {
+            wavRecorder.start(outFile, seconds = 5)
         }
     }
 
     fun stopRecording() {
-        mediaRecorder?.apply {
-            stop()
-            release()
-        }
+        wavRecorder.stop()
     }
+
+    fun getLastWavFile(): File? = lastWavFile
 
     fun insertDiagnosis(diagnosisTable: DiagnosisTable) {
         viewModelScope.launch {
@@ -59,7 +55,7 @@ class RecordViewModel(private val smartVoiceDatabase: SmartVoiceDatabase) : View
 
     suspend fun getCurrentUser(): User? {
         return withContext(Dispatchers.IO) {
-            smartVoiceDatabase.userDao().getUser()
+            smartVoiceDatabase.userDao().getLatestUser()
         }
     }
 }
