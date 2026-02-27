@@ -1,14 +1,16 @@
 package com.example.smartvoice.ui.account
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartvoice.data.SessionPrefs
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AccountInfoViewModel(
     private val database: SmartVoiceDatabase,
@@ -18,49 +20,96 @@ class AccountInfoViewModel(
     private val _user = MutableStateFlow<User?>(null)
     val user: StateFlow<User?> = _user
 
-    init {
-        refreshUser()
-    }
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting
 
-    private fun refreshUser() {
+    private val _deleteError = MutableStateFlow<String?>(null)
+    val deleteError: StateFlow<String?> = _deleteError
+
+    fun refreshLoggedInUser() {
         viewModelScope.launch {
-            try {
-                _user.value = database.userDao().getLatestUser()
-            } catch (e: Exception) {
-                Log.e("AccountInfoViewModel", "Error loading user", e)
-                _user.value = null
+            val loggedInUsername = SessionPrefs.getLoggedInUsername(context)
+
+            _user.value = withContext(Dispatchers.IO) {
+                if (loggedInUsername.isNullOrBlank()) null
+                else database.userDao().getUserByUsername(loggedInUsername)
             }
         }
     }
 
-    suspend fun deleteAccount(): Boolean {
-        return try {
-            val u = _user.value ?: return false
-            database.userDao().delete(u)
-            _user.value = null
-            true
-        } catch (e: Exception) {
-            Log.e("AccountInfoViewModel", "Error deleting account", e)
-            false
+    fun deleteAccountWithPassword(
+        password: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _isDeleting.value = true
+            _deleteError.value = null
+
+            val currentUser = _user.value
+            if (currentUser == null) {
+                _deleteError.value = "No user logged in"
+                _isDeleting.value = false
+                onError("No user logged in")
+                return@launch
+            }
+
+
+            val isValidPassword = withContext(Dispatchers.IO) {
+                val user = database.userDao().getUserByUsernameAndPassword(
+                    currentUser.username,
+                    password
+                )
+                user != null
+            }
+
+            if (!isValidPassword) {
+                _deleteError.value = "Incorrect password"
+                _isDeleting.value = false
+                onError("Incorrect password")
+                return@launch
+            }
+
+            try {
+                withContext(Dispatchers.IO) {
+
+                    val children = database.childDao().getChildrenForUser(currentUser.id)
+
+
+                    children.forEach { child ->
+
+                        database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
+
+
+                        database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
+                    }
+
+
+                    database.childDao().deleteAllChildrenForUser(currentUser.id)
+
+
+                    val allUsers = database.userDao().getAllUsersNewestFirst()
+                    val otherAdults = allUsers.filter { it.id != currentUser.id }
+                    otherAdults.forEach { adult ->
+                        database.userDao().delete(adult)
+                    }
+
+                    database.userDao().delete(currentUser)
+                }
+
+                SessionPrefs.clear(context)
+
+                _isDeleting.value = false
+                onSuccess()
+            } catch (e: Exception) {
+                _deleteError.value = "Failed to delete account: ${e.message}"
+                _isDeleting.value = false
+                onError("Failed to delete account: ${e.message}")
+            }
         }
     }
 
-    suspend fun resetPassword(
-        email: String,
-        currentPassword: String,
-        newPassword: String
-    ): Boolean {
-        return try {
-            val userByEmail = database.userDao().getUserByEmail(email) ?: return false
-            if (userByEmail.password != currentPassword) return false
-
-            val updated = userByEmail.copy(password = newPassword)
-            database.userDao().update(updated)
-            _user.value = updated
-            true
-        } catch (e: Exception) {
-            Log.e("AccountInfoViewModel", "Error resetting password", e)
-            false
-        }
+    init {
+        refreshLoggedInUser()
     }
 }

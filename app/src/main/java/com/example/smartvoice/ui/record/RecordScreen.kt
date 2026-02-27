@@ -1,5 +1,9 @@
 package com.example.smartvoice.ui.record
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
@@ -28,17 +32,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
-import com.example.smartvoice.ui.History.HistoryDestination
+import com.example.smartvoice.data.DiagnosisTable
+import com.example.smartvoice.ui.history.HistoryDestination
 import com.example.smartvoice.ui.navigation.NavigationDestination
 import com.example.smartvoice.ui.theme.BrightBlue
+import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 object RecordDestination : NavigationDestination {
     override val route = "record"
@@ -52,8 +62,10 @@ private val InterFont = FontFamily(
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
 
-private val MicGrey = Color(0xFF444444)
-private val RecordRed = Color(0xFFD94F4F)
+private val MicGrey      = Color(0xFF444444)
+private val RecordRed    = Color(0xFFD94F4F)
+private val TileTextColor    = Color(0xFF111827)
+private val PlaceholderColor = Color(0xFF4B5563)
 
 @Composable
 fun RecordScreen(
@@ -63,19 +75,75 @@ fun RecordScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
-    val context = LocalContext.current
+    val context        = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var isRecording by remember { mutableStateOf(false) }
-    var showInfoDialog by remember { mutableStateOf(false) }
+    var isRecording           by remember { mutableStateOf(false) }
+    var showInfoDialog        by remember { mutableStateOf(false) }
+    var showNameDialog        by remember { mutableStateOf(false) }
+    var showPermissionDialog  by remember { mutableStateOf(false) }
+    var patientNameInput      by remember { mutableStateOf("") }
+    var nameError             by remember { mutableStateOf(false) }
     var recordingSavedMessage by remember { mutableStateOf("") }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) showNameDialog = true
+        else showPermissionDialog = true
+    }
+
+    fun onRecordButtonTapped() {
+        when {
+            isRecording -> { }
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED -> showNameDialog = true
+            else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            shape = RoundedCornerShape(16.dp),
+            title = {
+                Text(
+                    "Microphone Permission Required",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = LogoBlue
+                )
+            },
+            text = {
+                Text(
+                    "SmartVoice needs access to your microphone to record voice samples. " +
+                            "Please grant microphone permission in your device Settings to continue.",
+                    fontFamily = InterFont,
+                    fontSize = 14.sp,
+                    color = TileTextColor
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPermissionDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("OK", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
+                }
+            }
+        )
+    }
 
     if (showInfoDialog) {
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
+            shape = RoundedCornerShape(16.dp),
             title = {
                 Text(
-                    text = "Recording Instructions",
+                    "Recording Instructions",
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
@@ -84,7 +152,9 @@ fun RecordScreen(
             },
             text = {
                 Text(
-                    text = "Please ask the patient to sustain a steady vowel sound - either \"aah\" or \"eee\" - continuously for approximately 5 seconds in a quiet environment.\n\nEnsure the device is held at a consistent distance from the patient's mouth throughout the recording.",
+                    text = "Please ask the patient to sustain a steady vowel sound — either \"aah\" or \"eee\" — " +
+                            "continuously for approximately 5 seconds in a quiet environment.\n\n" +
+                            "Ensure the device is held at a consistent distance from the patient's mouth throughout the recording.",
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Normal,
                     fontSize = 15.sp,
@@ -98,15 +168,139 @@ fun RecordScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
                     shape = RoundedCornerShape(10.dp)
                 ) {
+                    Text("OK", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
+                }
+            }
+        )
+    }
+
+    if (showNameDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isRecording) {
+                    showNameDialog   = false
+                    patientNameInput = ""
+                    nameError        = false
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            title = {
+                Text(
+                    "Patient Name",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = LogoBlue
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        "OK",
+                        "Enter the child's name before starting the recording.",
+                        fontFamily = InterFont,
+                        fontSize = 14.sp,
+                        color = PlaceholderColor
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+                    ) {
+                        TextField(
+                            value = patientNameInput,
+                            onValueChange = { patientNameInput = it; nameError = false },
+                            placeholder = {
+                                Text("Child's name", fontFamily = InterFont, color = PlaceholderColor)
+                            },
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor   = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor   = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor        = TileTextColor,
+                                unfocusedTextColor      = TileTextColor
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                fontFamily = InterFont,
+                                fontWeight = FontWeight.Medium,
+                                fontSize   = 16.sp
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    if (nameError) {
+                        Text(
+                            "Please enter a patient name.",
+                            fontFamily = InterFont,
+                            fontSize = 13.sp,
+                            color = ErrorRed
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (patientNameInput.isBlank()) {
+                            nameError = true
+                        } else {
+                            val capturedName = patientNameInput.trim()
+                            showNameDialog        = false
+                            patientNameInput      = ""
+                            nameError             = false
+                            isRecording           = true
+                            recordingSavedMessage = ""
+
+                            coroutineScope.launch {
+                                viewModel.startRecording(context)
+                                viewModel.stopRecording()
+                                isRecording = false
+
+                                val wavFile = viewModel.getLastWavFile()
+                                val mlScore = if (wavFile != null) viewModel.runModel(wavFile) else "N/A"
+
+                                val dateTimeStr = SimpleDateFormat(
+                                    "dd/MM/yyyy HH:mm:ss", Locale.getDefault()
+                                ).format(Date())
+
+                                viewModel.insertDiagnosis(
+                                    DiagnosisTable(
+                                        patientchi      = capturedName,
+                                        patientName     = capturedName,
+                                        diagnosis       = mlScore,
+                                        recordingDate   = dateTimeStr,
+                                        recordingLength = "5s"
+                                    )
+                                )
+
+                                recordingSavedMessage = "Recording saved!"
+                                delay(3000)
+                                recordingSavedMessage = ""
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
+                    shape  = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        "Start Recording",
                         fontFamily = InterFont,
                         fontWeight = FontWeight.Bold,
-                        color = White
+                        color      = White
                     )
                 }
             },
-            shape = RoundedCornerShape(16.dp)
+            dismissButton = {
+                TextButton(onClick = {
+                    showNameDialog   = false
+                    patientNameInput = ""
+                    nameError        = false
+                }) {
+                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                }
+            }
         )
     }
 
@@ -120,7 +314,6 @@ fun RecordScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                     Spacer(modifier = Modifier.height(40.dp))
@@ -140,7 +333,7 @@ fun RecordScreen(
                         }
                         Text(
                             text = "Recording",
-                            fontFamily = com.example.smartvoice.ui.record.InterFont,
+                            fontFamily = InterFont,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 40.sp,
                             letterSpacing = (-2.5).sp,
@@ -162,7 +355,7 @@ fun RecordScreen(
 
                     SoundWave(
                         isActive = isRecording,
-                        color = if (isRecording) RecordRed.copy(alpha = 0.8f) else MicGrey,
+                        color    = if (isRecording) RecordRed.copy(alpha = 0.8f) else MicGrey,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)
@@ -220,21 +413,8 @@ fun RecordScreen(
                         modifier = Modifier
                             .size(90.dp)
                             .clip(CircleShape)
-                            .background(RecordRed)
-                            .clickable {
-                                if (!isRecording) {
-                                    isRecording = true
-                                    recordingSavedMessage = ""
-                                    coroutineScope.launch {
-                                        viewModel.startRecording(context)
-                                        viewModel.stopRecording()
-                                        isRecording = false
-                                        recordingSavedMessage = "Recording saved"
-                                        delay(3000)
-                                        recordingSavedMessage = ""
-                                    }
-                                }
-                            },
+                            .background(if (isRecording) RecordRed.copy(alpha = 0.5f) else RecordRed)
+                            .clickable { onRecordButtonTapped() },
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
@@ -250,7 +430,7 @@ fun RecordScreen(
                     AnimatedVisibility(
                         visible = recordingSavedMessage.isNotEmpty(),
                         enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                        exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
+                        exit  = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
                     ) {
                         Text(
                             text = recordingSavedMessage,
@@ -286,25 +466,21 @@ private fun SoundWave(
 
     val heights = (0 until bars).map { i ->
         if (isActive) {
-            val delay = (i * 40) % 600
+            val delayMs = (i * 40) % 600
             transition.animateFloat(
                 initialValue = 0.1f,
-                targetValue = 1.0f,
+                targetValue  = 1.0f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = 480,
-                        delayMillis = delay,
-                        easing = FastOutSlowInEasing
-                    ),
+                    animation = tween(durationMillis = 480, delayMillis = delayMs, easing = FastOutSlowInEasing),
                     repeatMode = RepeatMode.Reverse
                 ),
                 label = "bar$i"
             )
         } else {
             val staticVal = when {
-                i < 2 || i >= bars - 2   -> 0.1f
-                i < 5 || i >= bars - 5   -> 0.25f
-                i < 8 || i >= bars - 8   -> 0.45f
+                i < 2  || i >= bars - 2  -> 0.10f
+                i < 5  || i >= bars - 5  -> 0.25f
+                i < 8  || i >= bars - 8  -> 0.45f
                 i < 11 || i >= bars - 11 -> 0.65f
                 i < 14 || i >= bars - 14 -> 0.82f
                 else                      -> 0.95f
@@ -316,7 +492,7 @@ private fun SoundWave(
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(3.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
         heights.forEach { h ->
             val fraction = if (h is State<*>) (h.value as? Float) ?: 0.5f else 0.5f
@@ -324,10 +500,7 @@ private fun SoundWave(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(fraction)
-                    .background(
-                        color = color,
-                        shape = RoundedCornerShape(50)
-                    )
+                    .background(color = color, shape = RoundedCornerShape(50))
             )
         }
     }

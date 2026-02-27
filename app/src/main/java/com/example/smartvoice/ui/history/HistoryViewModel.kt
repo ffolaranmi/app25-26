@@ -1,4 +1,4 @@
-package com.example.smartvoice.ui.History
+package com.example.smartvoice.ui.history
 
 import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
@@ -23,5 +23,19 @@ class HistoryViewModel(private val smartVoiceDatabase: SmartVoiceDatabase) : Vie
             loadDiagnoses()
         }
     }
-}
 
+    fun deleteDiagnosis(diagnosis: DiagnosisTable) {
+        viewModelScope.launch(Dispatchers.IO) {
+            smartVoiceDatabase.diagnosisDao().delete(diagnosis)
+            loadDiagnoses()
+        }
+    }
+
+    fun renameDiagnosis(diagnosis: DiagnosisTable, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val updated = diagnosis.copy(patientName = newName)
+            smartVoiceDatabase.diagnosisDao().update(updated)
+            loadDiagnoses()
+        }
+    }
+}

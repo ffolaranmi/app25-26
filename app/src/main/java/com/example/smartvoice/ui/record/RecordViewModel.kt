@@ -30,9 +30,8 @@ class RecordViewModel(
             .replace(Regex("[^A-Za-z0-9._-]"), "_")
 
         val fileName = "${safeUserTag}_$timeStamp.wav"
-
-        val outFile = File(context.filesDir, fileName)
-        lastWavFile = outFile
+        val outFile  = File(context.filesDir, fileName)
+        lastWavFile  = outFile
 
         withContext(Dispatchers.IO) {
             wavRecorder.start(outFile, seconds = 5)
@@ -44,6 +43,21 @@ class RecordViewModel(
     }
 
     fun getLastWavFile(): File? = lastWavFile
+
+    /**
+     * Runs the ML model on the given WAV file and returns a diagnosis score
+     * as a percentage string (e.g. "72").
+     *
+     * TODO: Replace the body of this function with your real model inference
+     *       once the ML pipeline is ready. The RecordScreen already calls this
+     *       and passes the result straight into DiagnosisTable.diagnosis.
+     */
+    suspend fun runModel(wavFile: File): String {
+        return withContext(Dispatchers.Default) {
+
+            (0..100).random().toString()
+        }
+    }
 
     fun insertDiagnosis(diagnosisTable: DiagnosisTable) {
         viewModelScope.launch {

@@ -23,8 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import com.example.smartvoice.R
-import com.example.smartvoice.ui.History.HistoryDestination
+import com.example.smartvoice.ui.history.HistoryDestination
 import com.example.smartvoice.ui.navigation.NavigationDestination
+import com.example.smartvoice.ui.child.ChildInfoDestination
 import com.example.smartvoice.ui.record.RecordDestination
 import com.example.smartvoice.ui.theme.BrightBlue
 import com.example.smartvoice.ui.theme.GradientBackground
@@ -50,10 +51,7 @@ object FindMedicalHelpDestination : NavigationDestination {
     override val route = "findMedicalHelp"
     override val titleRes = R.string.app_name
 }
-object ChildInfoDestination : NavigationDestination {
-    override val route = "childInfo"
-    override val titleRes = R.string.app_name
-}
+
 object FeedbackDestination : NavigationDestination {
     override val route = "feedback"
     override val titleRes = R.string.app_name

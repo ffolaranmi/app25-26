@@ -20,14 +20,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.SmartVoiceApplication
 import com.example.smartvoice.data.SmartVoiceDatabase
-import com.example.smartvoice.data.UserPreferences
 import com.example.smartvoice.ui.AppViewModelProvider
 import com.example.smartvoice.ui.theme.BrightBlue
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LogoBlue
 import com.example.smartvoice.ui.theme.SmartVoiceOutlinedTextFieldColors
 import com.example.smartvoice.ui.theme.White
-import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -87,8 +85,6 @@ private fun LoginBody(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferences(context) }
-    val coroutineScope = rememberCoroutineScope()
 
     var usernameCore by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -188,11 +184,12 @@ private fun LoginBody(
                         return@Button
                     }
 
-                    viewModel.loginUser(core, password) { isSuccess ->
+                    viewModel.loginUser(
+                        context = context,
+                        usernameInput = core,
+                        password = password
+                    ) { isSuccess ->
                         if (isSuccess) {
-                            coroutineScope.launch {
-                                userPrefs.saveUserEmail("@$core")
-                            }
                             onLoginSuccess()
                         } else {
                             errorMessage = "Invalid username or password. Please try again."

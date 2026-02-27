@@ -33,10 +33,10 @@ class RegisterViewModel(private val database: SmartVoiceDatabase) : ViewModel() 
 
         viewModelScope.launch {
             try {
-                val emailTrimmed = email.trim()
+                val emailTrimmed    = email.trim()
                 val usernameTrimmed = username.trim()
 
-                val emailExists = database.userDao().checkIfEmailExists(emailTrimmed) > 0
+                val emailExists    = database.userDao().checkIfEmailExists(emailTrimmed) > 0
                 val usernameExists = database.userDao().checkIfUsernameExists(usernameTrimmed) > 0
 
                 if (emailExists || usernameExists) {
@@ -46,10 +46,12 @@ class RegisterViewModel(private val database: SmartVoiceDatabase) : ViewModel() 
                 }
 
                 val newUser = User(
-                    username = usernameTrimmed,
-                    phone = phone.trim(),
-                    email = emailTrimmed,
-                    password = password
+                    firstName = firstName.trim(),
+                    lastName  = lastName.trim(),
+                    username  = usernameTrimmed,
+                    phone     = phone.trim(),
+                    email     = emailTrimmed,
+                    password  = password
                 )
 
                 database.userDao().insert(newUser)

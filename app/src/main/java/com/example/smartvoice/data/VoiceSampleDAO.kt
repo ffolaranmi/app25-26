@@ -19,4 +19,7 @@ interface VoiceSampleDAO {
 
     @Query("SELECT * from voiceSample ORDER BY created_at ASC")
     fun getAllVoiceSamples(): Flow<List<VoiceSample>>
+
+    @Query("DELETE FROM voiceSample WHERE childId = :childId")
+    suspend fun deleteVoiceSamplesForChild(childId: Long): Int
 }

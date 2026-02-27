@@ -9,8 +9,12 @@ class AccountInfoViewModelFactory(
     private val database: SmartVoiceDatabase,
     private val context: Context
 ) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return AccountInfoViewModel(database, context) as T
+        if (modelClass.isAssignableFrom(AccountInfoViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return AccountInfoViewModel(database, context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

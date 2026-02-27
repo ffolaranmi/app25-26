@@ -6,7 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.smartvoice.SmartVoiceApplication
 import com.example.smartvoice.data.SmartVoiceDatabase
-import com.example.smartvoice.ui.History.HistoryViewModel
+import com.example.smartvoice.ui.history.HistoryViewModel
 import com.example.smartvoice.ui.home.HomeViewModel
 import com.example.smartvoice.ui.login.LoginViewModel
 import com.example.smartvoice.ui.record.RecordViewModel

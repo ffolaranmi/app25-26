@@ -7,20 +7,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.smartvoice.SmartVoiceApplication
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.ui.AppViewModelProvider
-import com.example.smartvoice.ui.History.HistoryScreen
 import com.example.smartvoice.ui.about.AboutScreen
 import com.example.smartvoice.ui.account.AccountInfoScreen
 import com.example.smartvoice.ui.account.AddAdultDestination
+import com.example.smartvoice.ui.account.AdultDetailDestination
+import com.example.smartvoice.ui.account.AdultDetailScreen
 import com.example.smartvoice.ui.account.ManageAdultsDestination
 import com.example.smartvoice.ui.account.ViewChildInfoDestination
+import com.example.smartvoice.ui.child.ChildDetailDestination
+import com.example.smartvoice.ui.child.ChildDetailScreen
+import com.example.smartvoice.ui.child.ChildInfoDestination
+import com.example.smartvoice.ui.child.ChildInfoScreen
+import com.example.smartvoice.ui.feedback.FeedbackScreen
 import com.example.smartvoice.ui.help.FindMedicalHelpScreen
+import com.example.smartvoice.ui.history.HistoryScreen
 import com.example.smartvoice.ui.home.AccountInfoDestination
-import com.example.smartvoice.ui.home.ChildInfoDestination
 import com.example.smartvoice.ui.home.FeedbackDestination
 import com.example.smartvoice.ui.home.HomeScreen
 import com.example.smartvoice.ui.login.LoginScreen
@@ -69,7 +77,13 @@ fun SmartVoiceNavHost(
 
         composable("history") {
             HistoryScreen(
-                navigateBack = { navController.popBackStack() },
+                navigateBack = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                navigateToRecord = { navController.navigate("record") },
                 viewModelFactory = AppViewModelProvider.Factory(application)
             )
         }
@@ -77,7 +91,12 @@ fun SmartVoiceNavHost(
         composable("record") {
             RecordScreen(
                 navigateToScreenOption = { navController.navigate(it.route) },
-                navigateBack = { navController.popBackStack() },
+                navigateBack = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
                 viewModelFactory = AppViewModelProvider.Factory(application)
             )
         }
@@ -101,6 +120,7 @@ fun SmartVoiceNavHost(
                 navigateToHome = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
                     }
                 },
                 navigateToScreenOption = { navController.navigate(it.route) }
@@ -112,22 +132,62 @@ fun SmartVoiceNavHost(
                 navigateToHome = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
                     }
                 }
             )
         }
 
         composable(ChildInfoDestination.route) {
-            PlaceholderScreen(
-                title = "Child Information",
-                onBack = { navController.popBackStack() }
+            ChildInfoScreen(
+                database = database,
+                navigateBack = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                navigateToChildDetail = { childId ->
+                    navController.navigate("${ChildDetailDestination.route}/$childId")
+                }
+            )
+        }
+
+        composable(
+            route = ChildDetailDestination.routeWithArgs,
+            arguments = listOf(navArgument(ChildDetailDestination.childIdArg) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val childId = backStackEntry.arguments?.getLong(ChildDetailDestination.childIdArg) ?: 0L
+
+            ChildDetailScreen(
+                childId = childId,
+                database = database,
+                navigateBack = { navController.popBackStack() },
+                navigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                navigateToAllChildren = {
+                    navController.navigate(ChildInfoDestination.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
         }
 
         composable(FeedbackDestination.route) {
-            PlaceholderScreen(
-                title = "Feedback",
-                onBack = { navController.popBackStack() }
+            FeedbackScreen(
+                navController = navController,
+                navigateBack = { navController.popBackStack() },
+                navigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -151,6 +211,26 @@ fun SmartVoiceNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(
+            route = AdultDetailDestination.routeWithArgs,
+            arguments = listOf(navArgument(AdultDetailDestination.adultIdArg) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val adultId = backStackEntry.arguments?.getLong(AdultDetailDestination.adultIdArg) ?: 0L
+
+            AdultDetailScreen(
+                adultId = adultId,
+                database = database,
+                navigateBack = { navController.popBackStack() },
+                navigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                navigateToAllAdults = { navController.popBackStack(AccountInfoDestination.route, inclusive = false) }
+            )
+        }
     }
 }
 
@@ -169,15 +249,18 @@ private fun PlaceholderScreen(
                 }
             )
         }
-    ) { inner ->
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(inner)
+                .padding(innerPadding)
                 .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("Coming soon", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Coming soon",
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }
