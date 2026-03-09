@@ -30,6 +30,7 @@ import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import android.content.Intent
 import android.net.Uri
+import com.example.smartvoice.ui.navigation.NavigationDestination
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -37,6 +38,11 @@ private val InterFont = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold),
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
+
+object FeedbackDestination : NavigationDestination {
+    override val route = "feedback"
+    override val titleRes = R.string.feedback
+}
 
 private val TileTextColor = Color(0xFF111827)
 private val PlaceholderColor = Color(0xFF4B5563)
@@ -49,7 +55,7 @@ fun FeedbackScreen(
 ) {
     val context = LocalContext.current
 
-    val googleFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSexample/viewform"
+    val googleFormUrl = "https://forms.gle/sVdSmjXAgaHF9UA77"
 
     GradientBackground {
         Scaffold(
@@ -168,7 +174,7 @@ fun FeedbackScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "You'll be redirected to Google Forms.",
+                    text = "You'll be redirected to a Google Form.",
                     fontFamily = InterFont,
                     fontSize = 14.sp,
                     color = PlaceholderColor,
@@ -182,6 +188,7 @@ fun FeedbackScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
+                    letterSpacing = (-1.5).sp,
                     color = LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )

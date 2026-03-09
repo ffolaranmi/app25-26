@@ -37,6 +37,16 @@ class AccountInfoViewModel(
         }
     }
 
+    fun markFirstLoginComplete(user: User) {
+        viewModelScope.launch {
+            val updatedUser = user.copy(firstLoginFlag = false)
+            withContext(Dispatchers.IO) {
+                database.userDao().update(updatedUser)
+            }
+            _user.value = updatedUser
+        }
+    }
+
     fun deleteAccountWithPassword(
         password: String,
         onSuccess: () -> Unit,
@@ -53,7 +63,6 @@ class AccountInfoViewModel(
                 onError("No user logged in")
                 return@launch
             }
-
 
             val isValidPassword = withContext(Dispatchers.IO) {
                 val user = database.userDao().getUserByUsernameAndPassword(
@@ -74,25 +83,11 @@ class AccountInfoViewModel(
                 withContext(Dispatchers.IO) {
 
                     val children = database.childDao().getChildrenForUser(currentUser.id)
-
-
                     children.forEach { child ->
-
                         database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
-
-
                         database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
                     }
-
-
                     database.childDao().deleteAllChildrenForUser(currentUser.id)
-
-
-                    val allUsers = database.userDao().getAllUsersNewestFirst()
-                    val otherAdults = allUsers.filter { it.id != currentUser.id }
-                    otherAdults.forEach { adult ->
-                        database.userDao().delete(adult)
-                    }
 
                     database.userDao().delete(currentUser)
                 }

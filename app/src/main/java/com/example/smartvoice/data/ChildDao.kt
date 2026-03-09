@@ -25,7 +25,7 @@ interface ChildDao {
     @Query("SELECT * FROM children WHERE id = :id")
     suspend fun getChildById(id: Long): ChildTable?
 
-    @Query("DELETE FROM children WHERE id = :userId")
+    @Query("DELETE FROM children WHERE userId = :userId")
     suspend fun deleteAllChildrenForUser(userId: Long)
 
     @Query("SELECT * FROM children WHERE userId = :userId")

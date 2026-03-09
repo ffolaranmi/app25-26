@@ -30,17 +30,23 @@ import com.example.smartvoice.ui.theme.White
 @Composable
 fun LoginScreen(
     navigateToScreenOption: (String) -> Unit,
-    navigateToRegister: () -> Unit,
+    navigateToSignup: () -> Unit,
     application: SmartVoiceApplication,
     database: SmartVoiceDatabase,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory(application))
 ) {
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSavedUsername(context)
+    }
+
     Scaffold(backgroundColor = androidx.compose.ui.graphics.Color.Transparent) { innerPadding ->
         GradientBackground {
             LoginBody(
                 onLoginSuccess = { navigateToScreenOption("home") },
-                onRegisterClick = navigateToRegister,
+                onRegisterClick = navigateToSignup,
                 viewModel = viewModel,
                 modifier = modifier.padding(innerPadding)
             )
@@ -85,13 +91,25 @@ private fun LoginBody(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
     var usernameCore by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(false) }
 
     var usernameError by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(uiState.savedUsername) {
+        if (uiState.savedUsername != null) {
+            val savedUsername = uiState.savedUsername
+            if (savedUsername != null) {
+                usernameCore = savedUsername.removePrefix("@")
+            }
+            rememberMe = true
+        }
+    }
 
     Box(
         modifier = modifier
@@ -145,6 +163,26 @@ private fun LoginBody(
                 colors = SmartVoiceOutlinedTextFieldColors()
             )
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberMe,
+                    onCheckedChange = { rememberMe = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = BrightBlue
+                    )
+                )
+                Text(
+                    text = "Remember Me",
+                    modifier = Modifier.padding(start = 4.dp),
+                    color = MaterialTheme.colors.onBackground.copy(alpha = 0.75f)
+                )
+            }
+
             if (usernameError.isNotEmpty()) {
                 Text(
                     text = usernameError,
@@ -187,7 +225,8 @@ private fun LoginBody(
                     viewModel.loginUser(
                         context = context,
                         usernameInput = core,
-                        password = password
+                        password = password,
+                        rememberMe = rememberMe
                     ) { isSuccess ->
                         if (isSuccess) {
                             onLoginSuccess()
@@ -204,7 +243,11 @@ private fun LoginBody(
                 ),
                 elevation = ButtonDefaults.elevation(0.dp, 0.dp)
             ) {
-                Text(text = "Login", style = MaterialTheme.typography.button)
+                Text(
+                    text = "Login",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -219,7 +262,11 @@ private fun LoginBody(
                 ),
                 elevation = ButtonDefaults.elevation(0.dp, 0.dp)
             ) {
-                Text(text = "Sign up", style = MaterialTheme.typography.button)
+                Text(
+                    text = "Sign up",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
             }
         }
 

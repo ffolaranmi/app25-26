@@ -29,6 +29,9 @@ interface UserDao {
     @Query("SELECT COUNT(*) FROM user WHERE username = :username")
     suspend fun checkIfUsernameExists(username: String): Int
 
+    @Query("SELECT COUNT(*) FROM user WHERE phone = :phone")
+    suspend fun checkIfPhoneExists(phone: String): Int
+
     @Query("SELECT * FROM user ORDER BY id DESC LIMIT 1")
     suspend fun getLatestUser(): User?
 

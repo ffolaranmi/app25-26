@@ -14,7 +14,7 @@ import androidx.navigation.navArgument
 import com.example.smartvoice.SmartVoiceApplication
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.ui.AppViewModelProvider
-import com.example.smartvoice.ui.about.AboutScreen
+import com.example.smartvoice.ui.account.AccountInfoDestination
 import com.example.smartvoice.ui.account.AccountInfoScreen
 import com.example.smartvoice.ui.account.AddAdultDestination
 import com.example.smartvoice.ui.account.AdultDetailDestination
@@ -26,14 +26,17 @@ import com.example.smartvoice.ui.child.ChildDetailScreen
 import com.example.smartvoice.ui.child.ChildInfoDestination
 import com.example.smartvoice.ui.child.ChildInfoScreen
 import com.example.smartvoice.ui.feedback.FeedbackScreen
-import com.example.smartvoice.ui.help.FindMedicalHelpScreen
-import com.example.smartvoice.ui.history.HistoryScreen
-import com.example.smartvoice.ui.home.AccountInfoDestination
-import com.example.smartvoice.ui.home.FeedbackDestination
+import com.example.smartvoice.ui.faqs.FaqsDestination
+import com.example.smartvoice.ui.faqs.FaqsScreen
+import com.example.smartvoice.ui.feedback.FeedbackDestination
+import com.example.smartvoice.ui.home.HomeDestination
 import com.example.smartvoice.ui.home.HomeScreen
 import com.example.smartvoice.ui.login.LoginScreen
+import com.example.smartvoice.ui.record.RecordDestination
 import com.example.smartvoice.ui.record.RecordScreen
-import com.example.smartvoice.ui.register.RegisterScreen
+import com.example.smartvoice.ui.results.ResultsDestination
+import com.example.smartvoice.ui.results.ResultsScreen
+import com.example.smartvoice.ui.signup.SignupScreen
 
 @Composable
 fun SmartVoiceNavHost(
@@ -49,62 +52,68 @@ fun SmartVoiceNavHost(
     ) {
         composable("login") {
             LoginScreen(
-                navigateToScreenOption = { navController.navigate("home") },
-                navigateToRegister = { navController.navigate("register") },
+                navigateToScreenOption = { navController.navigate(HomeDestination.route) },
+                navigateToSignup = { navController.navigate("signup") },
                 application = application,
                 database = database
             )
         }
 
-        composable("register") {
-            RegisterScreen(
+        composable("signup") {
+            SignupScreen(
                 navigateToLogin = { navController.navigate("login") },
                 application = application
             )
         }
 
-        composable("home") {
+        composable(HomeDestination.route) {
             HomeScreen(
                 navigateToScreenOption = { navController.navigate(it.route) },
                 navigateToLogin = {
                     navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+                        popUpTo(HomeDestination.route) { inclusive = true }
                     }
                 },
-                viewModelFactory = AppViewModelProvider.Factory(application)
+                viewModelFactory = AppViewModelProvider.Factory(application),
+                database = database
             )
         }
 
-        composable("history") {
-            HistoryScreen(
+        composable(ResultsDestination.route) {
+            ResultsScreen(
                 navigateBack = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                navigateToRecord = { navController.navigate("record") },
+                navigateToRecord = { navController.navigate(RecordDestination.route) },
                 viewModelFactory = AppViewModelProvider.Factory(application)
             )
         }
 
-        composable("record") {
+        composable(RecordDestination.route) {
             RecordScreen(
                 navigateToScreenOption = { navController.navigate(it.route) },
                 navigateBack = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                viewModelFactory = AppViewModelProvider.Factory(application)
+                viewModelFactory = AppViewModelProvider.Factory(application),
+                database = database
             )
         }
 
-        composable("about") {
-            AboutScreen(
-                navigateToScreenOption = { navController.navigate(it.route) },
-                navigateBack = { navController.popBackStack() }
+        composable(FaqsDestination.route) {
+            FaqsScreen(
+                navigateToHome = {
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -114,12 +123,12 @@ fun SmartVoiceNavHost(
                 navController = navController,
                 navigateToLogin = {
                     navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+                        popUpTo(HomeDestination.route) { inclusive = true }
                     }
                 },
                 navigateToHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
@@ -127,23 +136,12 @@ fun SmartVoiceNavHost(
             )
         }
 
-        composable("findMedicalHelp") {
-            FindMedicalHelpScreen(
-                navigateToHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
         composable(ChildInfoDestination.route) {
             ChildInfoScreen(
                 database = database,
                 navigateBack = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
@@ -164,8 +162,8 @@ fun SmartVoiceNavHost(
                 database = database,
                 navigateBack = { navController.popBackStack() },
                 navigateHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
@@ -183,8 +181,8 @@ fun SmartVoiceNavHost(
                 navController = navController,
                 navigateBack = { navController.popBackStack() },
                 navigateHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 }
@@ -223,8 +221,8 @@ fun SmartVoiceNavHost(
                 database = database,
                 navigateBack = { navController.popBackStack() },
                 navigateHome = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
+                    navController.navigate(HomeDestination.route) {
+                        popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
