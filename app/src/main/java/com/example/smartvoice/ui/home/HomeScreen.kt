@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PeopleOutline
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -303,7 +303,7 @@ private fun Tile(
                     color = BrightBlue.copy(alpha = 0.1f)
                 )
                 .clickable(
-                    indication = rememberRipple(bounded = true, color = BrightBlue.copy(alpha = 0.2f)),
+                    indication = ripple(bounded = true, color = BrightBlue.copy(alpha = 0.2f)),
                     interactionSource = remember { MutableInteractionSource() }
                 ) { onClick() },
             contentAlignment = Alignment.Center
