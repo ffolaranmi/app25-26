@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.SessionPrefs
 import com.example.smartvoice.data.SmartVoiceDatabase
+import com.example.smartvoice.data.supabase.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +17,8 @@ data class LoginUiState(
 )
 
 class LoginViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
+
+    private val authRepository = AuthRepository()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -43,6 +46,12 @@ class LoginViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
             val user = database.userDao().getUserByUsernameAndPassword(normalizedUsername, password)
 
             if (user != null) {
+                // Also sign in to Supabase using email/password so remote session exists
+                try {
+                    authRepository.signIn(user.email, password)
+                } catch (_: Exception) {
+                    // Ignore remote auth failures for now; local login still succeeds
+                }
                 if (rememberMe) {
                     SessionPrefs.setRememberedUsername(context, normalizedUsername)
                 } else {

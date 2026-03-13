@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.ChildTable
 import com.example.smartvoice.data.SmartVoiceDatabase
+import com.example.smartvoice.data.supabase.SupabaseChildRemoteRepository
+import com.example.smartvoice.data.supabase.SupabaseClientProvider
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
+
+    private val remoteRepo = SupabaseChildRemoteRepository()
 
     private val _children = MutableStateFlow<List<ChildTable>>(emptyList())
     val children: StateFlow<List<ChildTable>> = _children
@@ -36,14 +41,28 @@ class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
 
     fun addChild(child: ChildTable) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.childDao().insertChild(child) }
+            withContext(Dispatchers.IO) {
+                db.childDao().insertChild(child)
+
+                val supabaseUserId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+                if (supabaseUserId != null) {
+                    remoteRepo.syncChildInsert(child, supabaseUserId)
+                }
+            }
             loadChildren(child.userId)
         }
     }
 
     fun updateChild(child: ChildTable) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.childDao().updateChild(child) }
+            withContext(Dispatchers.IO) {
+                db.childDao().updateChild(child)
+
+                val supabaseUserId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+                if (supabaseUserId != null) {
+                    remoteRepo.syncChildUpdate(child, supabaseUserId)
+                }
+            }
             loadChildren(child.userId)
             _selectedChild.value = child
         }
@@ -51,7 +70,10 @@ class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
 
     fun deleteChild(child: ChildTable) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.childDao().deleteChild(child) }
+            withContext(Dispatchers.IO) {
+                db.childDao().deleteChild(child)
+                remoteRepo.syncChildDelete(child.id)
+            }
             loadChildren(child.userId)
         }
     }

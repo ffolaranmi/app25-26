@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
+import com.example.smartvoice.data.supabase.SupabaseDiagnosisRemoteRepository
 import com.example.smartvoice.network.ApiClient
 import com.example.smartvoice.network.fileToMultipart
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,7 @@ class RecordViewModel(
 
     private val wavRecorder = WavRecorder()
     private var lastWavFile: File? = null
+    private val remoteDiagnosisRepo = SupabaseDiagnosisRemoteRepository()
 
     fun getRecordingDirectory(context: Context): File {
         return File(context.filesDir, "recordings").apply {
@@ -186,6 +188,8 @@ class RecordViewModel(
             withContext(Dispatchers.IO) {
                 try {
                     smartVoiceDatabase.diagnosisDao().insertNewDiagnosis(diagnosisTable)
+                    // Mirror into Supabase without blocking local insert
+                    remoteDiagnosisRepo.insertDiagnosis(diagnosisTable, null)
                     Log.d("RecordViewModel", "Diagnosis inserted: ${diagnosisTable.patientName}")
                     Log.d("RecordViewModel", "Recording path saved: ${diagnosisTable.recordingPath}")
                 } catch (e: Exception) {

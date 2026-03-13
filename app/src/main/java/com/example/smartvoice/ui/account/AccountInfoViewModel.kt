@@ -6,6 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.SessionPrefs
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
+import com.example.smartvoice.data.supabase.SupabaseChildRemoteRepository
+import com.example.smartvoice.data.supabase.SupabaseDiagnosisRemoteRepository
+import com.example.smartvoice.data.supabase.SupabaseVoiceSampleRemoteRepository
+import com.example.smartvoice.data.supabase.SupabaseClientProvider
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +21,10 @@ class AccountInfoViewModel(
     private val database: SmartVoiceDatabase,
     private val context: Context
 ) : ViewModel() {
+
+    private val remoteChildRepo = SupabaseChildRemoteRepository()
+    private val remoteDiagnosisRepo = SupabaseDiagnosisRemoteRepository()
+    private val remoteVoiceSampleRepo = SupabaseVoiceSampleRemoteRepository()
 
     private val _user = MutableStateFlow<User?>(null)
     val user: StateFlow<User?> = _user
@@ -79,20 +88,31 @@ class AccountInfoViewModel(
                 return@launch
             }
 
-            try {
-                withContext(Dispatchers.IO) {
+                try {
+                    withContext(Dispatchers.IO) {
 
-                    val children = database.childDao().getChildrenForUser(currentUser.id)
-                    children.forEach { child ->
-                        database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
-                        database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
+                        val children = database.childDao().getChildrenForUser(currentUser.id)
+                        children.forEach { child ->
+                            database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
+                            database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
+
+                            // Remote deletions per child
+                            remoteDiagnosisRepo.clearAllDiagnosesForUser(
+                                SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+                                    ?: ""
+                            )
+                            remoteVoiceSampleRepo.deleteVoiceSamplesForChild(child.id)
+                        }
+                        database.childDao().deleteAllChildrenForUser(currentUser.id)
+                        remoteChildRepo.deleteAllChildrenForUser(
+                            SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+                                ?: ""
+                        )
+
+                        database.userDao().delete(currentUser)
                     }
-                    database.childDao().deleteAllChildrenForUser(currentUser.id)
 
-                    database.userDao().delete(currentUser)
-                }
-
-                SessionPrefs.clear(context)
+                    SessionPrefs.clearAll(context)
 
                 _isDeleting.value = false
                 onSuccess()
