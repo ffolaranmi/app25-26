@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -425,7 +426,10 @@ fun RecordScreen(
                                             }
 
                                             val recordingCount = withContext(Dispatchers.IO) {
-                                                childVm?.getRecordingCountForChild(capturedName) ?: 0
+                                                childVm?.getRecordingCountForChild(
+                                                    capturedName,
+                                                    userId = TODO()
+                                                ) ?: 0
                                             }
 
                                             val nextRecordingNumber = recordingCount + 1

@@ -56,9 +56,9 @@ class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
         }
     }
 
-    suspend fun getRecordingCountForChild(childName: String): Int {
+    suspend fun getRecordingCountForChild(childName: String, userId: Long): Int {
         return withContext(Dispatchers.IO) {
-            db.diagnosisDao().getRecordingCountForChild(childName)
+            db.diagnosisDao().getRecordingCountForChild(childName, userId)
         }
     }
 }

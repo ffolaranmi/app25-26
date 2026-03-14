@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         ChildTable::class,
         VoiceSample::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 abstract class SmartVoiceDatabase : RoomDatabase() {

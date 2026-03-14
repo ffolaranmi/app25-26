@@ -81,14 +81,12 @@ class AccountInfoViewModel(
 
             try {
                 withContext(Dispatchers.IO) {
-
                     val children = database.childDao().getChildrenForUser(currentUser.id)
                     children.forEach { child ->
-                        database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
+                        database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString(), currentUser.id)
                         database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
                     }
                     database.childDao().deleteAllChildrenForUser(currentUser.id)
-
                     database.userDao().delete(currentUser)
                 }
 

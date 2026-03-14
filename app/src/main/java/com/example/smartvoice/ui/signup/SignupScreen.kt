@@ -129,7 +129,7 @@ fun SignupScreen(
     val allFieldsFilled =
         firstName.isNotBlank() &&
                 lastName.isNotBlank() &&
-                ukPhoneDigits.length == 9 &&
+                ukPhoneDigits.length == 10 &&
                 email.isNotBlank() &&
                 usernameCore.isNotBlank() &&
                 (if (useGeneratedPassword) generatedPassword.isNotBlank() else password.isNotBlank()) &&
@@ -142,7 +142,7 @@ fun SignupScreen(
 
         if (firstName.isBlank()) { firstNameError = "Required"; ok = false }
         if (lastName.isBlank())  { lastNameError  = "Required"; ok = false }
-        if (ukPhoneDigits.length != 9) { phoneError = "Must be 9 digits"; ok = false }
+        if (ukPhoneDigits.length != 10) { phoneError = "Must be 10 digits"; ok = false }
 
         val emailTrimmed = email.trim()
         val (emailValid, emailMsg) = isEmailValid(emailTrimmed)
@@ -600,7 +600,7 @@ private fun UkPhoneField(
 
     OutlinedTextField(
         value = digits,
-        onValueChange = { raw -> onDigitsChange(raw.filter { it.isDigit() }.take(9)) },
+        onValueChange = { raw -> onDigitsChange(raw.filter { it.isDigit() }.take(10)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
         textStyle = inputTextStyle,

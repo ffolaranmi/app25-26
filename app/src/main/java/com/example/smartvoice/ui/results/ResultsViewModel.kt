@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.DiagnosisTable
+import com.example.smartvoice.data.SessionPrefs
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.network.ApiClient
 import com.example.smartvoice.network.fileToMultipart
@@ -25,6 +26,9 @@ class ResultsViewModel(
     private val db: SmartVoiceDatabase,
     private val context: Context
 ) : ViewModel() {
+
+    private val userId: Long
+        get() = SessionPrefs.getLoggedInUserId(context)
 
     private val _diagnoses = MutableStateFlow<List<DiagnosisTable>>(emptyList())
     val diagnoses: StateFlow<List<DiagnosisTable>> = _diagnoses
@@ -96,7 +100,6 @@ class ResultsViewModel(
                 }
 
                 val response = ApiClient.api.predict(fileToMultipart(File(context.cacheDir, "dummy.wav")))
-
                 android.util.Log.d("ResultsViewModel", "Server health check - response code: ${response.code()}")
                 true
             } catch (e: Exception) {
@@ -109,7 +112,7 @@ class ResultsViewModel(
     fun loadDiagnoses() {
         viewModelScope.launch {
             _diagnoses.value = withContext(Dispatchers.IO) {
-                db.diagnosisDao().getAllEntities()
+                db.diagnosisDao().getAllEntities(userId)
             }
             updateUnviewedCount()
         }
@@ -124,7 +127,7 @@ class ResultsViewModel(
 
     fun clearAllDiagnoses() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.diagnosisDao().clearAllDiagnoses() }
+            withContext(Dispatchers.IO) { db.diagnosisDao().clearAllDiagnoses(userId) }
             loadDiagnoses()
         }
     }
@@ -156,7 +159,6 @@ class ResultsViewModel(
             android.util.Log.d("ResultsViewModel", "Recording path: ${diagnosis.recordingPath}, exists: ${recordingFile?.exists()}")
 
             if (recordingFile == null || !recordingFile.exists()) {
-
                 android.util.Log.e("ResultsViewModel", "Recording file not found: ${diagnosis.recordingPath}")
                 withContext(Dispatchers.IO) {
                     db.diagnosisDao().update(
@@ -212,7 +214,7 @@ class ResultsViewModel(
     private fun updateUnviewedCount() {
         viewModelScope.launch {
             _unviewedCount.value = withContext(Dispatchers.IO) {
-                db.diagnosisDao().getUnviewedCount()
+                db.diagnosisDao().getUnviewedCount(userId)
             }
         }
     }
