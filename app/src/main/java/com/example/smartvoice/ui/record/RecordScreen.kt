@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
+import com.example.smartvoice.data.Classification
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.data.SessionPrefs
 import com.example.smartvoice.data.SmartVoiceDatabase
@@ -444,7 +445,16 @@ fun RecordScreen(
                                             )
 
                                             withContext(Dispatchers.IO) {
-                                                viewModel.insertDiagnosis(diagnosis)
+                                                viewModel.insertDiagnosis(diagnosis, selectedChildId)
+                                            }
+
+                                            val cid = selectedChildId
+                                            if (cid != null) {
+                                                viewModel.insertVoiceSampleMetadata(
+                                                    childId = cid,
+                                                    wavFile = wavFile,
+                                                    classification = Classification.PROCESSING
+                                                )
                                             }
 
                                             successMessageText = "RECORDING SAVED"

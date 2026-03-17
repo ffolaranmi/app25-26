@@ -4,10 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartvoice.data.Classification
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
+import com.example.smartvoice.data.VoiceSample
 import com.example.smartvoice.data.supabase.SupabaseDiagnosisRemoteRepository
+import com.example.smartvoice.data.supabase.SupabaseVoiceSampleRemoteRepository
 import com.example.smartvoice.network.ApiClient
 import com.example.smartvoice.network.fileToMultipart
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +27,7 @@ class RecordViewModel(
     private val wavRecorder = WavRecorder()
     private var lastWavFile: File? = null
     private val remoteDiagnosisRepo = SupabaseDiagnosisRemoteRepository()
+    private val remoteVoiceSampleRepo = SupabaseVoiceSampleRemoteRepository()
 
     fun getRecordingDirectory(context: Context): File {
         return File(context.filesDir, "recordings").apply {
@@ -183,17 +187,51 @@ class RecordViewModel(
         }
     }
 
-    fun insertDiagnosis(diagnosisTable: DiagnosisTable) {
+    fun insertDiagnosis(diagnosisTable: DiagnosisTable, childId: Long?) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 try {
+                    // Persist locally for existing flows (e.g. results screen)
                     smartVoiceDatabase.diagnosisDao().insertNewDiagnosis(diagnosisTable)
-                    // Mirror into Supabase without blocking local insert
-                    remoteDiagnosisRepo.insertDiagnosis(diagnosisTable, null)
-                    Log.d("RecordViewModel", "Diagnosis inserted: ${diagnosisTable.patientName}")
+                    // Mirror into Supabase so other devices can see the record
+                    remoteDiagnosisRepo.insertDiagnosis(diagnosisTable, childId)
+                    Log.d(
+                        "RecordViewModel",
+                        "Diagnosis inserted for childId=$childId, patientName=${diagnosisTable.patientName}"
+                    )
                     Log.d("RecordViewModel", "Recording path saved: ${diagnosisTable.recordingPath}")
                 } catch (e: Exception) {
                     Log.e("RecordViewModel", "Failed to insert diagnosis", e)
+                }
+            }
+        }
+    }
+
+    fun insertVoiceSampleMetadata(childId: Long, wavFile: File, classification: Classification) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    val sample = VoiceSample(
+                        childId = childId,
+                        // Store only a non-sensitive identifier remotely (filename),
+                        // not a device-specific absolute path.
+                        fileLocation = wavFile.name,
+                        createdAt = System.currentTimeMillis(),
+                        classification = classification
+                    )
+
+                    // Local cache (optional, but keeps existing patterns working)
+                    smartVoiceDatabase.voiceSampleDAO().insert(sample)
+
+                    // Remote metadata for cross-device visibility
+                    remoteVoiceSampleRepo.insertVoiceSample(sample)
+
+                    Log.d(
+                        "RecordViewModel",
+                        "VoiceSample metadata inserted for childId=$childId, file=${wavFile.name}"
+                    )
+                } catch (e: Exception) {
+                    Log.e("RecordViewModel", "Failed to insert voice sample metadata", e)
                 }
             }
         }

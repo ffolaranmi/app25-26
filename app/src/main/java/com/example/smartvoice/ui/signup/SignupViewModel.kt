@@ -45,15 +45,17 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val emailTrimmed    = email.trim()
-                val usernameTrimmed = username.trim()
+                val rawUsername     = username.trim()
+                val baseUsername    = if (rawUsername.startsWith("@")) rawUsername.removePrefix("@") else rawUsername
+                val normalizedUsername = "@$baseUsername"
                 val phoneTrimmed    = phone.trim()
 
                 val localEmailExists    = database.userDao().checkIfEmailExists(emailTrimmed) > 0
-                val localUsernameExists = database.userDao().checkIfUsernameExists(usernameTrimmed) > 0
+                val localUsernameExists = database.userDao().checkIfUsernameExists(normalizedUsername) > 0
                 val localPhoneExists    = database.userDao().checkIfPhoneExists(phoneTrimmed) > 0
 
                 val remoteEmailExists    = remoteUserRepo.isEmailTaken(emailTrimmed)
-                val remoteUsernameExists = remoteUserRepo.isUsernameTaken(usernameTrimmed)
+                val remoteUsernameExists = remoteUserRepo.isUsernameTaken(normalizedUsername)
                 val remotePhoneExists    = remoteUserRepo.isPhoneTaken(phoneTrimmed)
 
                 val emailExists    = localEmailExists || remoteEmailExists
@@ -101,7 +103,7 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
                 val newUser = User(
                     firstName     = firstName.trim(),
                     lastName      = lastName.trim(),
-                    username      = usernameTrimmed,
+                    username      = normalizedUsername,
                     phone         = phoneTrimmed,
                     email         = emailTrimmed,
                     password      = password,
@@ -114,7 +116,7 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
                 // Persist locally for existing flows
                 database.userDao().insert(newUser)
 
-                val insertedUser = database.userDao().getUserByUsername(usernameTrimmed)
+                val insertedUser = database.userDao().getUserByUsername(normalizedUsername)
                 if (insertedUser != null) {
                     // Mirror full profile details into public.users for the current Supabase user
                     val supabaseClient = com.example.smartvoice.data.supabase.SupabaseClientProvider.client
@@ -123,7 +125,7 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
                         remoteUserRepo.upsertUserDetails(insertedUser, remoteUserId)
                     }
 
-                    SessionPrefs.setLoggedInUsername(context, usernameTrimmed)
+                    SessionPrefs.setLoggedInUsername(context, normalizedUsername)
                     SessionPrefs.setLoggedInUserId(context, insertedUser.id)
                 }
 

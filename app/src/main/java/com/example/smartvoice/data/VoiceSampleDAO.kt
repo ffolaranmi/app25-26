@@ -22,4 +22,7 @@ interface VoiceSampleDAO {
 
     @Query("DELETE FROM voiceSample WHERE childId = :childId")
     suspend fun deleteVoiceSamplesForChild(childId: Long): Int
+
+    @Query("DELETE FROM voiceSample")
+    suspend fun clearAllVoiceSamples(): Int
 }

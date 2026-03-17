@@ -91,22 +91,20 @@ class AccountInfoViewModel(
                 try {
                     withContext(Dispatchers.IO) {
 
-                        val children = database.childDao().getChildrenForUser(currentUser.id)
-                        children.forEach { child ->
-                            database.diagnosisDao().deleteDiagnosesForPatient(child.id.toString())
-                            database.voiceSampleDAO().deleteVoiceSamplesForChild(child.id)
+                        // Clear all local diagnoses so no other account on
+                        // this device can see this user's history after
+                        // deletion.
+                        database.diagnosisDao().clearAllDiagnoses()
+                        database.voiceSampleDAO().clearAllVoiceSamples()
 
-                            // Remote deletions per child
-                            remoteDiagnosisRepo.clearAllDiagnosesForUser(
-                                SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
-                                    ?: ""
-                            )
-                            remoteVoiceSampleRepo.deleteVoiceSamplesForChild(child.id)
-                        }
-                        database.childDao().deleteAllChildrenForUser(currentUser.id)
+                        val remoteUserId =
+                            SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString() ?: ""
+
+                        // Remote deletions (Supabase is source of truth)
+                        remoteDiagnosisRepo.clearAllDiagnosesForUser(remoteUserId)
+                        remoteVoiceSampleRepo.deleteVoiceSamplesForUser(remoteUserId)
                         remoteChildRepo.deleteAllChildrenForUser(
-                            SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
-                                ?: ""
+                            remoteUserId
                         )
 
                         database.userDao().delete(currentUser)

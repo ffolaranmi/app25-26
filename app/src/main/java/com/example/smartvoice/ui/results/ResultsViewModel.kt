@@ -12,6 +12,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.data.SmartVoiceDatabase
+import com.example.smartvoice.data.supabase.SupabaseClientProvider
+import com.example.smartvoice.data.supabase.SupabaseDiagnosisRemoteRepository
+import io.github.jan.supabase.auth.auth
 import com.example.smartvoice.network.ApiClient
 import com.example.smartvoice.network.fileToMultipart
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +28,8 @@ class ResultsViewModel(
     private val db: SmartVoiceDatabase,
     private val context: Context
 ) : ViewModel() {
+
+    private val remoteDiagnosisRepo = SupabaseDiagnosisRemoteRepository()
 
     private val _diagnoses = MutableStateFlow<List<DiagnosisTable>>(emptyList())
     val diagnoses: StateFlow<List<DiagnosisTable>> = _diagnoses
@@ -117,21 +122,45 @@ class ResultsViewModel(
 
     fun deleteDiagnosis(diagnosis: DiagnosisTable) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.diagnosisDao().delete(diagnosis) }
+            withContext(Dispatchers.IO) {
+                remoteDiagnosisRepo.deleteDiagnosisByMetadata(
+                    patientName = diagnosis.patientName,
+                    recordingDate = diagnosis.recordingDate
+                )
+                db.diagnosisDao().delete(diagnosis)
+            }
             loadDiagnoses()
         }
     }
 
     fun clearAllDiagnoses() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.diagnosisDao().clearAllDiagnoses() }
+            withContext(Dispatchers.IO) {
+                val remoteUserId =
+                    SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+                if (remoteUserId != null) {
+                    remoteDiagnosisRepo.clearAllDiagnosesForUser(remoteUserId)
+                }
+                db.diagnosisDao().clearAllDiagnoses()
+            }
             loadDiagnoses()
         }
     }
 
     fun markAsViewed(diagnosisId: Long) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { db.diagnosisDao().markAsViewed(diagnosisId) }
+            withContext(Dispatchers.IO) {
+                val diagnosis = db.diagnosisDao().getAllEntities().firstOrNull {
+                    it.id == diagnosisId
+                }
+                if (diagnosis != null) {
+                    remoteDiagnosisRepo.markAsViewedByMetadata(
+                        patientName = diagnosis.patientName,
+                        recordingDate = diagnosis.recordingDate
+                    )
+                }
+                db.diagnosisDao().markAsViewed(diagnosisId)
+            }
             loadDiagnoses()
         }
     }

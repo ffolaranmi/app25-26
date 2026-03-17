@@ -44,10 +44,9 @@ class SupabaseUserRemoteRepository {
         false
     }
 
-    /**
-     * Update the existing public.users row created via trigger on auth.users
-     * with the full profile details collected in the Android app.
-     */
+
+    // Update the existing public.users row created via trigger on auth.users
+    // with the full profile details collected in the app.
     suspend fun upsertUserDetails(localUser: User, remoteUserId: String) {
         val row = localUser.toSupabaseRow(remoteUserId)
         try {
@@ -103,6 +102,21 @@ class SupabaseChildRemoteRepository {
             Log.e("SupabaseChildRepo", "Failed to delete children for user", e)
         }
     }
+
+
+    // Fetch all children rows for a given Supabase user id.
+    // The caller is responsible for mapping the remote user id
+    // onto a local Room user id when constructing ChildTable.
+
+    suspend fun fetchChildrenForUser(remoteUserId: String): List<SupabaseChildRow> = try {
+        val result = client.postgrest["children"].select {
+            filter { eq("user_id", remoteUserId) }
+        }
+        result.decodeList<SupabaseChildRow>()
+    } catch (e: Exception) {
+        Log.e("SupabaseChildRepo", "Failed to fetch children", e)
+        emptyList()
+    }
 }
 
 class SupabaseDiagnosisRemoteRepository {
@@ -128,6 +142,19 @@ class SupabaseDiagnosisRemoteRepository {
         }
     }
 
+    suspend fun deleteDiagnosisByMetadata(patientName: String, recordingDate: String) {
+        try {
+            client.postgrest["diagnoses"].delete {
+                filter {
+                    eq("patient_name", patientName)
+                    eq("recording_date", recordingDate)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SupabaseDiagnosisRepo", "Failed to delete diagnosis by metadata", e)
+        }
+    }
+
     suspend fun clearAllDiagnosesForUser(remoteUserId: String) {
         try {
             // Delete via join on children owned by user
@@ -143,6 +170,55 @@ class SupabaseDiagnosisRemoteRepository {
             }
         } catch (e: Exception) {
             Log.e("SupabaseDiagnosisRepo", "Failed to clear diagnoses for user", e)
+        }
+    }
+
+    // Fetch all diagnoses for all children that belong to the
+    // given Supabase user id. Results are returned as remote
+    // rows so the caller can decide how to persist them locally.
+
+    suspend fun fetchDiagnosesForUser(remoteUserId: String): List<SupabaseDiagnosisRow> = try {
+        val childrenResult = client.postgrest["children"].select {
+            filter { eq("user_id", remoteUserId) }
+        }
+        val children = childrenResult.decodeList<SupabaseChildRow>()
+        if (children.isEmpty()) {
+            return emptyList()
+        }
+
+        val allDiagnoses = mutableListOf<SupabaseDiagnosisRow>()
+        for (child in children) {
+            val childId = child.id ?: continue
+            val diagResult = client.postgrest["diagnoses"].select {
+                filter { eq("child_id", childId) }
+            }
+            allDiagnoses += diagResult.decodeList<SupabaseDiagnosisRow>()
+        }
+        allDiagnoses
+    } catch (e: Exception) {
+        Log.e("SupabaseDiagnosisRepo", "Failed to fetch diagnoses for user", e)
+        emptyList()
+    }
+
+     // Mark all diagnoses that match the given metadata as viewed.
+     // This keeps the remote `is_viewed` flag in sync with the local
+     // Room cache used by the results screen.
+    suspend fun markAsViewedByMetadata(patientName: String, recordingDate: String) {
+        try {
+            client.postgrest["diagnoses"].update(
+                {
+                    // Only update the is_viewed flag; leave all other
+                    // fields unchanged.
+                    set("is_viewed", true)
+                }
+            ) {
+                filter {
+                    eq("patient_name", patientName)
+                    eq("recording_date", recordingDate)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SupabaseDiagnosisRepo", "Failed to mark diagnosis as viewed", e)
         }
     }
 }

@@ -6,6 +6,9 @@ import com.example.smartvoice.data.User
 import com.example.smartvoice.data.VoiceSample
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @Serializable
 data class SupabaseUserRow(
@@ -75,14 +78,30 @@ fun ChildTable.toSupabaseRow(remoteUserId: String): SupabaseChildRow =
         hospitalId = hospitalId.ifBlank { null }
     )
 
+private val localUiDateTimeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+
+
+// The supabase column is a timestamp field so ISO-8601, this converts
+private fun String.toSupabaseTimestampOrOriginal(): String {
+    return try {
+        val ldt = LocalDateTime.parse(this, localUiDateTimeFormatter)
+        ldt.toInstant(ZoneOffset.UTC).toString() // ISO-8601
+    } catch (_: Exception) {
+        // If it's already ISO or a different server-accepted format, keep it.
+        this
+    }
+}
+
 fun DiagnosisTable.toSupabaseRow(childId: Long?): SupabaseDiagnosisRow =
     SupabaseDiagnosisRow(
         childId = childId,
         patientName = patientName,
         diagnosis = diagnosis,
-        recordingDate = recordingDate,
+        recordingDate = recordingDate.toSupabaseTimestampOrOriginal(),
+        // Keeping recording length as non-sensitive metadata
         recordingLength = recordingLength,
-        recordingPath = recordingPath.ifBlank { null },
+        recordingPath = null,
         isViewed = isViewed
     )
 

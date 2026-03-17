@@ -54,28 +54,17 @@ fun LoginScreen(
     }
 }
 
-private fun isUsernameValid(usernameCore: String): Boolean {
-    if (usernameCore.isBlank()) return true
-    return Regex("^[A-Za-z0-9._]+$").matches(usernameCore)
-}
-
 @Composable
-private fun UsernameAtLoginField(
-    usernameCore: String,
-    onUsernameCoreChange: (String) -> Unit
+private fun EmailLoginField(
+    email: String,
+    onEmailChange: (String) -> Unit
 ) {
     OutlinedTextField(
-        value = usernameCore,
-        onValueChange = { raw ->
-            val cleaned = raw
-                .filter { it.isLetterOrDigit() || it == '.' || it == '_' }
-                .take(12)
-            onUsernameCoreChange(cleaned)
-        },
-        label = { Text("Username") },
-        leadingIcon = { Text("@", fontWeight = FontWeight.ExtraBold) },
+        value = email,
+        onValueChange = onEmailChange,
+        label = { Text("Email") },
         singleLine = true,
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Ascii),
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
         modifier = Modifier
             .fillMaxWidth(0.9f)
             .padding(vertical = 8.dp),
@@ -93,19 +82,19 @@ private fun LoginBody(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
-    var usernameCore by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
 
-    var usernameError by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.savedUsername) {
         if (uiState.savedUsername != null) {
             val savedUsername = uiState.savedUsername
             if (savedUsername != null) {
-                usernameCore = savedUsername.removePrefix("@")
+                email = savedUsername
             }
             rememberMe = true
         }
@@ -131,11 +120,11 @@ private fun LoginBody(
                 modifier = Modifier.padding(bottom = 22.dp)
             )
 
-            UsernameAtLoginField(
-                usernameCore = usernameCore,
-                onUsernameCoreChange = {
-                    usernameCore = it
-                    usernameError = ""
+            EmailLoginField(
+                email = email,
+                onEmailChange = {
+                    email = it
+                    emailError = ""
                     if (errorMessage.isNotEmpty()) errorMessage = ""
                 }
             )
@@ -183,9 +172,9 @@ private fun LoginBody(
                 )
             }
 
-            if (usernameError.isNotEmpty()) {
+            if (emailError.isNotEmpty()) {
                 Text(
-                    text = usernameError,
+                    text = emailError,
                     color = MaterialTheme.colors.error,
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
@@ -210,28 +199,23 @@ private fun LoginBody(
 
             Button(
                 onClick = {
-                    val core = usernameCore.trim()
+                    val emailTrimmed = email.trim()
 
-                    if (core.isBlank()) {
-                        usernameError = "Enter a username"
-                        return@Button
-                    }
-
-                    if (!isUsernameValid(core)) {
-                        usernameError = "Invalid username"
+                    if (emailTrimmed.isBlank()) {
+                        emailError = "Enter an email"
                         return@Button
                     }
 
                     viewModel.loginUser(
                         context = context,
-                        usernameInput = core,
+                        emailInput = emailTrimmed,
                         password = password,
                         rememberMe = rememberMe
                     ) { isSuccess ->
                         if (isSuccess) {
                             onLoginSuccess()
                         } else {
-                            errorMessage = "Invalid username or password. Please try again."
+                            errorMessage = "Invalid email or password. Please try again."
                         }
                     }
                 },

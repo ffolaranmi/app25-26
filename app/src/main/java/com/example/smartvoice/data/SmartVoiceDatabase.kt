@@ -9,17 +9,15 @@ import androidx.room.RoomDatabase
     entities = [
         User::class,
         DiagnosisTable::class,
-        ChildTable::class,
         VoiceSample::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 abstract class SmartVoiceDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun diagnosisDao(): DiagnosisDao
-    abstract fun childDao(): ChildDao
     abstract fun voiceSampleDAO(): VoiceSampleDAO
 
     companion object {

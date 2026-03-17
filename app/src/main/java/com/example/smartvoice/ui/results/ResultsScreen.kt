@@ -772,30 +772,55 @@ fun ResultsRecordingTile(
                     }
 
                     is DiagnosisResult.Ready -> {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = Color(0xFF2E7D32).copy(alpha = 0.10f),
-                                    shape = RoundedCornerShape(20.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 5.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            val pct = (result.probability * 100).toInt()
+
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = Color(0xFF2E7D32).copy(alpha = 0.10f),
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 5.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = null,
-                                    tint = Color(0xFF2E7D32),
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2E7D32),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Ready",
+                                        fontFamily = InterFont,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "$pct%",
+                                fontFamily = InterFont,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 14.sp,
+                                color = TileTextColor
+                            )
+
+                            if (!fileExists) {
                                 Text(
-                                    text = "Ready",
+                                    text = "Audio not on this device",
                                     fontFamily = InterFont,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF2E7D32)
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 11.sp,
+                                    color = PlaceholderColor
                                 )
                             }
                         }
@@ -833,30 +858,32 @@ fun ResultsRecordingTile(
                                 color = Color(0xFFB71C1C)
                             )
                         }
-                        Button(
-                            onClick = {
-                                mediaPlayer?.stop()
-                                mediaPlayer?.release()
-                                mediaPlayer = null
-                                isPlaying = false
-                                playbackProgress = 0f
-                                onRetryClick()
-                            },
-                            enabled = true,
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BrightBlue,
-                                contentColor = White
-                            ),
-                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
-                            modifier = Modifier.height(34.dp)
-                        ) {
-                            Text(
-                                text = "Retry",
-                                fontFamily = InterFont,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
+                        if (fileExists) {
+                            Button(
+                                onClick = {
+                                    mediaPlayer?.stop()
+                                    mediaPlayer?.release()
+                                    mediaPlayer = null
+                                    isPlaying = false
+                                    playbackProgress = 0f
+                                    onRetryClick()
+                                },
+                                enabled = true,
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = BrightBlue,
+                                    contentColor = White
+                                ),
+                                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text(
+                                    text = "Retry",
+                                    fontFamily = InterFont,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 }

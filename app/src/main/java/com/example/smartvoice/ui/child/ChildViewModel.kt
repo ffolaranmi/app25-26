@@ -25,45 +25,40 @@ class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
 
     fun loadChildren(userId: Long) {
         viewModelScope.launch {
-            _children.value = withContext(Dispatchers.IO) {
-                db.childDao().getChildrenForUser(userId)
-            }
+            reloadChildrenFromSupabase()
         }
     }
 
     fun loadChildById(id: Long) {
         viewModelScope.launch {
-            _selectedChild.value = withContext(Dispatchers.IO) {
-                db.childDao().getChildById(id)
+            if (_children.value.isEmpty()) {
+                reloadChildrenFromSupabase()
             }
+            _selectedChild.value = _children.value.firstOrNull { it.id == id }
         }
     }
 
     fun addChild(child: ChildTable) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.childDao().insertChild(child)
-
                 val supabaseUserId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
                 if (supabaseUserId != null) {
                     remoteRepo.syncChildInsert(child, supabaseUserId)
                 }
             }
-            loadChildren(child.userId)
+            reloadChildrenFromSupabase()
         }
     }
 
     fun updateChild(child: ChildTable) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.childDao().updateChild(child)
-
                 val supabaseUserId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
                 if (supabaseUserId != null) {
                     remoteRepo.syncChildUpdate(child, supabaseUserId)
                 }
             }
-            loadChildren(child.userId)
+            reloadChildrenFromSupabase()
             _selectedChild.value = child
         }
     }
@@ -71,16 +66,42 @@ class ChildViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
     fun deleteChild(child: ChildTable) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.childDao().deleteChild(child)
                 remoteRepo.syncChildDelete(child.id)
             }
-            loadChildren(child.userId)
+            reloadChildrenFromSupabase()
+        }
+    }
+
+    private suspend fun reloadChildrenFromSupabase() {
+        val supabaseUserId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id?.toString()
+        if (supabaseUserId == null) {
+            _children.value = emptyList()
+            _selectedChild.value = null
+            return
+        }
+
+        val remoteChildren = withContext(Dispatchers.IO) {
+            remoteRepo.fetchChildrenForUser(supabaseUserId)
+        }
+
+        _children.value = remoteChildren.map { row ->
+            ChildTable(
+                id = row.id ?: 0L,
+                userId = 0L,
+                firstName = row.firstName,
+                lastName = row.lastName,
+                gender = row.gender,
+                birthMonth = row.birthMonth,
+                birthYear = row.birthYear,
+                hospitalId = row.hospitalId ?: ""
+            )
         }
     }
 
     suspend fun getRecordingCountForChild(childName: String): Int {
-        return withContext(Dispatchers.IO) {
-            db.diagnosisDao().getRecordingCountForChild(childName)
-        }
+        // Recording count is now derived from remote diagnoses; this helper
+        // should be refactored in a later batch. For now, return 0 to avoid
+        // relying on the local Room diagnosis table.
+        return 0
     }
 }
