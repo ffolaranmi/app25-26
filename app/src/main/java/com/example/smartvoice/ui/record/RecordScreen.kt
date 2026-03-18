@@ -12,6 +12,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,12 +40,7 @@ import com.example.smartvoice.R
 import com.example.smartvoice.data.DiagnosisTable
 import com.example.smartvoice.ui.history.HistoryDestination
 import com.example.smartvoice.ui.navigation.NavigationDestination
-import com.example.smartvoice.ui.theme.BrightBlue
-import com.example.smartvoice.ui.theme.ErrorRed
-import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LogoBlue
-import com.example.smartvoice.ui.theme.PillGrey
-import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -64,8 +60,6 @@ private val InterFont = FontFamily(
 
 private val MicGrey      = Color(0xFF444444)
 private val RecordRed    = Color(0xFFD94F4F)
-private val TileTextColor    = Color(0xFF111827)
-private val PlaceholderColor = Color(0xFF4B5563)
 
 @Composable
 fun RecordScreen(
@@ -77,6 +71,7 @@ fun RecordScreen(
     val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
     val context        = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
 
     var isRecording           by remember { mutableStateOf(false) }
     var showInfoDialog        by remember { mutableStateOf(false) }
@@ -113,7 +108,7 @@ fun RecordScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
-                    color = LogoBlue
+                    color = if (isDark) White else LogoBlue
                 )
             },
             text = {
@@ -122,7 +117,7 @@ fun RecordScreen(
                             "Please grant microphone permission in your device Settings to continue.",
                     fontFamily = InterFont,
                     fontSize = 14.sp,
-                    color = TileTextColor
+                    color = if (isDark) DarkTextPrimary else Color(0xFF111827)
                 )
             },
             confirmButton = {
@@ -147,7 +142,7 @@ fun RecordScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
-                    color = LogoBlue
+                    color = if (isDark) White else LogoBlue
                 )
             },
             text = {
@@ -159,7 +154,7 @@ fun RecordScreen(
                     fontWeight = FontWeight.Normal,
                     fontSize = 15.sp,
                     lineHeight = 22.sp,
-                    color = Color(0xFF1F2937)
+                    color = if (isDark) DarkTextPrimary else Color(0xFF1F2937)
                 )
             },
             confirmButton = {
@@ -190,7 +185,7 @@ fun RecordScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
-                    color = LogoBlue
+                    color = if (isDark) White else LogoBlue
                 )
             },
             text = {
@@ -199,19 +194,19 @@ fun RecordScreen(
                         "Enter the child's name before starting the recording.",
                         fontFamily = InterFont,
                         fontSize = 14.sp,
-                        color = PlaceholderColor
+                        color = if (isDark) DarkTextSecondary else Color(0xFF4B5563)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+                            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
                     ) {
                         TextField(
                             value = patientNameInput,
                             onValueChange = { patientNameInput = it; nameError = false },
                             placeholder = {
-                                Text("Child's name", fontFamily = InterFont, color = PlaceholderColor)
+                                Text("Child's name", fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563))
                             },
                             singleLine = true,
                             colors = TextFieldDefaults.colors(
@@ -219,8 +214,8 @@ fun RecordScreen(
                                 unfocusedContainerColor = Color.Transparent,
                                 focusedIndicatorColor   = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor        = TileTextColor,
-                                unfocusedTextColor      = TileTextColor
+                                focusedTextColor        = if (isDark) White else Color(0xFF111827),
+                                unfocusedTextColor      = if (isDark) White else Color(0xFF111827)
                             ),
                             textStyle = LocalTextStyle.current.copy(
                                 fontFamily = InterFont,
@@ -298,7 +293,7 @@ fun RecordScreen(
                     patientNameInput = ""
                     nameError        = false
                 }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
                 }
             }
         )
@@ -327,7 +322,7 @@ fun RecordScreen(
                             Icon(
                                 imageVector = Icons.Filled.Home,
                                 contentDescription = "Home",
-                                tint = LogoBlue,
+                                tint = if (isDark) White else LogoBlue,
                                 modifier = Modifier.size(38.dp)
                             )
                         }
@@ -337,7 +332,7 @@ fun RecordScreen(
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 40.sp,
                             letterSpacing = (-2.5).sp,
-                            color = LogoBlue,
+                            color = if (isDark) White else LogoBlue,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -347,7 +342,7 @@ fun RecordScreen(
                     Icon(
                         imageVector = Icons.Outlined.MicNone,
                         contentDescription = "Microphone",
-                        tint = if (isRecording) RecordRed else MicGrey,
+                        tint = if (isRecording) RecordRed else if (isDark) White.copy(alpha = 0.7f) else MicGrey,
                         modifier = Modifier.size(160.dp)
                     )
 
@@ -355,7 +350,7 @@ fun RecordScreen(
 
                     SoundWave(
                         isActive = isRecording,
-                        color    = if (isRecording) RecordRed.copy(alpha = 0.8f) else MicGrey,
+                        color    = if (isRecording) RecordRed.copy(alpha = 0.8f) else if (isDark) White.copy(alpha = 0.5f) else MicGrey,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)
@@ -376,7 +371,7 @@ fun RecordScreen(
                             modifier = Modifier
                                 .size(72.dp)
                                 .clip(CircleShape)
-                                .background(LogoBlue)
+                                .background(if (isDark) BrightBlue else LogoBlue)
                                 .clickable { showInfoDialog = true },
                             contentAlignment = Alignment.Center
                         ) {
@@ -447,7 +442,7 @@ fun RecordScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }

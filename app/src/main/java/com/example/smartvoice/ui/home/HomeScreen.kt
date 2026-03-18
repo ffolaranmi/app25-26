@@ -1,7 +1,9 @@
 package com.example.smartvoice.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +67,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModelFactory: ViewModelProvider.Factory,
 ) {
+    val isDark = isSystemInDarkTheme()
     GradientBackground {
         Scaffold(containerColor = Color.Transparent) { innerPadding ->
             Column(
@@ -74,18 +78,15 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Spacer(modifier = Modifier.height(72.dp))
+                Spacer(modifier = Modifier.height(60.dp))
 
-                Text(
-                    text = "SmartVoice",
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 42.sp,
-                    letterSpacing = (-1.2).sp,
-                    color = LogoBlue
+                Image(
+                    painter = painterResource(id = R.drawable.smartvoicelogo),
+                    contentDescription = null,
+                    modifier = Modifier.size(240.dp)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 BubbleCluster(
                     onBubbleClick = navigateToScreenOption,
@@ -100,7 +101,7 @@ fun HomeScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Medium,
                     fontSize = 13.sp,
-                    color = Color(0xFF6B6B6B),
+                    color = if (isDark) White.copy(alpha = 0.7f) else Color(0xFF6B6B6B),
                     lineHeight = 18.sp,
                     modifier = Modifier
                         .padding(top = 14.dp)
@@ -118,7 +119,7 @@ fun HomeScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = Color(0xFF444444),
+                    color = if (isDark) White.copy(alpha = 0.85f) else Color(0xFF444444),
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }

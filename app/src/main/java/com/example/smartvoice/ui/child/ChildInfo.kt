@@ -4,6 +4,7 @@ import com.example.smartvoice.ui.child.ChildViewModel
 import com.example.smartvoice.ui.child.ChildViewModelFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,13 +33,7 @@ import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.ui.account.AccountInfoViewModel
 import com.example.smartvoice.ui.account.AccountInfoViewModelFactory
 import com.example.smartvoice.ui.navigation.NavigationDestination
-import com.example.smartvoice.ui.theme.BrightBlue
-import com.example.smartvoice.ui.theme.ErrorRed
-import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LightBlue
-import com.example.smartvoice.ui.theme.LogoBlue
-import com.example.smartvoice.ui.theme.PillGrey
-import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.theme.*
 import java.util.Calendar
 
 
@@ -61,9 +56,6 @@ private val InterFont = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold),
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
-
-private val TileTextColor    = Color(0xFF111827)
-private val PlaceholderColor = Color(0xFF4B5563)
 
 private val monthNames = listOf(
     "January", "February", "March", "April", "May", "June",
@@ -88,6 +80,7 @@ fun ChildInfoScreen(
     navigateToChildDetail: (Long) -> Unit,
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     val accountVm: AccountInfoViewModel = viewModel(
         factory = AccountInfoViewModelFactory(database, context)
     )
@@ -106,13 +99,14 @@ fun ChildInfoScreen(
             onDismissRequest = { showDeleteDialog = null },
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text("Remove Child?", fontFamily = InterFont, fontWeight = FontWeight.Bold)
+                Text("Remove Child?", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = if (isDark) White else Color.Unspecified)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "Are you sure you want to remove ${child.firstName} ${child.lastName}?",
-                        fontFamily = InterFont
+                        fontFamily = InterFont,
+                        color = if (isDark) DarkTextPrimary else Color.Unspecified
                     )
                     Text(
                         "This action cannot be undone.",
@@ -133,7 +127,7 @@ fun ChildInfoScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
                 }
             }
         )
@@ -169,7 +163,7 @@ fun ChildInfoScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -179,7 +173,7 @@ fun ChildInfoScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -196,7 +190,7 @@ fun ChildInfoScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = PlaceholderColor,
+                            color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                             textAlign = TextAlign.Center,
                             lineHeight = 24.sp
                         )
@@ -241,7 +235,7 @@ fun ChildInfoScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -255,13 +249,14 @@ private fun ChildListTile(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = PillGrey)
+        colors = CardDefaults.cardColors(containerColor = if (isDark) DarkPill else PillGrey)
     ) {
         Row(
             modifier = Modifier
@@ -276,7 +271,7 @@ private fun ChildListTile(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 17.sp,
-                    color = TileTextColor
+                    color = if (isDark) White else Color(0xFF111827)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -284,14 +279,14 @@ private fun ChildListTile(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Normal,
                     fontSize = 13.sp,
-                    color = PlaceholderColor
+                    color = if (isDark) DarkTextSecondary else Color(0xFF4B5563)
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = LogoBlue.copy(alpha = 0.5f),
+                    tint = if (isDark) White.copy(alpha = 0.5f) else LogoBlue.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
                 )
                 IconButton(
@@ -318,6 +313,7 @@ fun ChildDetailScreen(
     navigateHome: () -> Unit,
     navigateToAllChildren: () -> Unit,
 ) {
+    val isDark = isSystemInDarkTheme()
     val viewModel: ChildViewModel = viewModel(factory = ChildViewModelFactory(database))
     val child by viewModel.selectedChild.collectAsState()
 
@@ -357,7 +353,7 @@ fun ChildDetailScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -367,7 +363,7 @@ fun ChildDetailScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -417,7 +413,7 @@ fun ChildDetailScreen(
                 Button(
                     onClick = navigateToAllChildren,
                     modifier = Modifier.width(220.dp).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = White),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) DarkPill else White),
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, LightBlue),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
@@ -427,7 +423,7 @@ fun ChildDetailScreen(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = LogoBlue
+                        color = if (isDark) White else LogoBlue
                     )
                 }
 
@@ -438,7 +434,7 @@ fun ChildDetailScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -448,11 +444,12 @@ fun ChildDetailScreen(
 
 @Composable
 private fun InfoTileRow(label: String, value: String) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .background(color = PillGrey, shape = RoundedCornerShape(14.dp))
+            .background(color = if (isDark) DarkPill else PillGrey, shape = RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Column {
@@ -461,7 +458,7 @@ private fun InfoTileRow(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
-                color = PlaceholderColor,
+                color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                 letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -470,7 +467,7 @@ private fun InfoTileRow(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp,
-                color = if (value.isNotEmpty()) TileTextColor else PlaceholderColor
+                color = if (value.isNotEmpty()) (if (isDark) White else Color(0xFF111827)) else (if (isDark) DarkTextSecondary else Color(0xFF4B5563))
             )
         }
     }
@@ -489,6 +486,7 @@ private fun AddChildDialog(
     var selectedMonth by remember { mutableStateOf<Int?>(null) }
     var birthYear by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    val isDark = isSystemInDarkTheme()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -500,7 +498,7 @@ private fun AddChildDialog(
                 fontFamily = InterFont,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
-                color = LogoBlue
+                color = if (isDark) White else LogoBlue
             )
         },
         text = {
@@ -576,7 +574,7 @@ private fun AddChildDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
             }
         }
     )
@@ -595,6 +593,7 @@ private fun EditChildDialog(
     var selectedMonth by remember { mutableStateOf(child.birthMonth) }
     var birthYear by remember { mutableStateOf(child.birthYear.toString()) }
     var error by remember { mutableStateOf("") }
+    val isDark = isSystemInDarkTheme()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -605,7 +604,7 @@ private fun EditChildDialog(
                 fontFamily = InterFont,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
-                color = LogoBlue
+                color = if (isDark) White else LogoBlue
             )
         },
         text = {
@@ -680,7 +679,7 @@ private fun EditChildDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
             }
         }
     )
@@ -692,16 +691,17 @@ private fun DialogField(
     label: String,
     onValueChange: (String) -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
     ) {
         TextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = {
-                Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp)
+                Text(label, fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563), fontSize = 14.sp)
             },
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -709,8 +709,8 @@ private fun DialogField(
                 unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor   = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor        = TileTextColor,
-                unfocusedTextColor      = TileTextColor
+                focusedTextColor        = if (isDark) White else Color(0xFF111827),
+                unfocusedTextColor      = if (isDark) White else Color(0xFF111827)
             ),
             textStyle = LocalTextStyle.current.copy(
                 fontFamily = InterFont,
@@ -730,13 +730,14 @@ private fun MonthDropdownField(
     label: String
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
 
     val displayText = selectedMonth?.let { monthNames.getOrNull(it - 1) } ?: label
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
     ) {
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -748,7 +749,7 @@ private fun MonthDropdownField(
                 onValueChange = {},
                 readOnly = true,
                 placeholder = {
-                    Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp)
+                    Text(label, fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563), fontSize = 14.sp)
                 },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = TextFieldDefaults.colors(
@@ -756,8 +757,8 @@ private fun MonthDropdownField(
                     unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor   = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor        = if (selectedMonth != null) TileTextColor else PlaceholderColor,
-                    unfocusedTextColor      = if (selectedMonth != null) TileTextColor else PlaceholderColor
+                    focusedTextColor        = if (selectedMonth != null) (if (isDark) White else Color(0xFF111827)) else (if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563)),
+                    unfocusedTextColor      = if (selectedMonth != null) (if (isDark) White else Color(0xFF111827)) else (if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563))
                 ),
                 textStyle = LocalTextStyle.current.copy(
                     fontFamily = InterFont,
@@ -796,12 +797,13 @@ private fun SimpleDropdownField(
     onSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
     val displayText = selected ?: label
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
     ) {
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -813,7 +815,7 @@ private fun SimpleDropdownField(
                 onValueChange = {},
                 readOnly = true,
                 placeholder = {
-                    Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp)
+                    Text(label, fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563), fontSize = 14.sp)
                 },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = TextFieldDefaults.colors(
@@ -821,8 +823,8 @@ private fun SimpleDropdownField(
                     unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor   = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor        = if (selected != null) TileTextColor else PlaceholderColor,
-                    unfocusedTextColor      = if (selected != null) TileTextColor else PlaceholderColor
+                    focusedTextColor        = if (selected != null) (if (isDark) White else Color(0xFF111827)) else (if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563)),
+                    unfocusedTextColor      = if (selected != null) (if (isDark) White else Color(0xFF111827)) else (if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563))
                 ),
                 textStyle = LocalTextStyle.current.copy(
                     fontFamily = InterFont,

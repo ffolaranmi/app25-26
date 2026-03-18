@@ -2,6 +2,7 @@ package com.example.smartvoice.ui.account
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,13 +40,7 @@ import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.data.User
 import com.example.smartvoice.ui.child.ChildInfoDestination
 import com.example.smartvoice.ui.navigation.NavigationDestination
-import com.example.smartvoice.ui.theme.BrightBlue
-import com.example.smartvoice.ui.theme.ErrorRed
-import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LightBlue
-import com.example.smartvoice.ui.theme.LogoBlue
-import com.example.smartvoice.ui.theme.PillGrey
-import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,8 +77,6 @@ private val InterFont = FontFamily(
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
 
-private val TileTextColor    = Color(0xFF111827)
-private val PlaceholderColor = Color(0xFF4B5563)
 private val InfoBlue         = Color(0xFF1565C0)
 
 class AdultsViewModel(private val db: SmartVoiceDatabase) : ViewModel() {
@@ -155,6 +148,7 @@ fun AccountInfoScreen(
     navigateToScreenOption: (NavigationDestination) -> Unit
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
 
     val accountVm: AccountInfoViewModel = viewModel(
         factory = AccountInfoViewModelFactory(database, context)
@@ -181,13 +175,14 @@ fun AccountInfoScreen(
             onDismissRequest = { showDeleteAdultDialog = null },
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text("Remove Adult?", fontFamily = InterFont, fontWeight = FontWeight.Bold)
+                Text("Remove Adult?", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = if (isDark) White else Color.Unspecified)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "Are you sure you want to remove ${target.firstName} ${target.lastName}?",
-                        fontFamily = InterFont
+                        fontFamily = InterFont,
+                        color = if (isDark) DarkTextPrimary else Color.Unspecified
                     )
                     Text(
                         "This action cannot be undone.",
@@ -208,7 +203,7 @@ fun AccountInfoScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteAdultDialog = null }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
                 }
             }
         )
@@ -264,7 +259,7 @@ fun AccountInfoScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -274,7 +269,7 @@ fun AccountInfoScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -291,7 +286,7 @@ fun AccountInfoScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = PlaceholderColor,
+                            color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                             textAlign = TextAlign.Center,
                             lineHeight = 24.sp
                         )
@@ -342,7 +337,7 @@ fun AccountInfoScreen(
                 Button(
                     onClick = { navigateToScreenOption(ChildInfoDestination) },
                     modifier = Modifier.width(180.dp).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = White),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) DarkPill else White),
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, LightBlue),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
@@ -352,7 +347,7 @@ fun AccountInfoScreen(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = LogoBlue
+                        color = if (isDark) White else LogoBlue
                     )
                 }
 
@@ -385,7 +380,7 @@ fun AccountInfoScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -400,13 +395,14 @@ private fun AdultListTile(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = PillGrey)
+        colors = CardDefaults.cardColors(containerColor = if (isDark) DarkPill else PillGrey)
     ) {
         Row(
             modifier = Modifier
@@ -421,7 +417,7 @@ private fun AdultListTile(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 17.sp,
-                    color = TileTextColor
+                    color = if (isDark) White else Color(0xFF111827)
                 )
                 if (isAccountHolder) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -448,7 +444,7 @@ private fun AdultListTile(
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = LogoBlue.copy(alpha = 0.5f),
+                    tint = if (isDark) White.copy(alpha = 0.5f) else LogoBlue.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
                 )
                 if (!isAccountHolder) {
@@ -480,6 +476,7 @@ fun AdultDetailScreen(
     navigateToAllAdults: () -> Unit,
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     val accountVm: AccountInfoViewModel = viewModel(
         factory = AccountInfoViewModelFactory(database, context)
     )
@@ -526,7 +523,7 @@ fun AdultDetailScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -536,7 +533,7 @@ fun AdultDetailScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 32.sp,
                         letterSpacing = (-1.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -607,7 +604,7 @@ fun AdultDetailScreen(
                 Button(
                     onClick = navigateToAllAdults,
                     modifier = Modifier.width(220.dp).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = White),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) DarkPill else White),
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, LightBlue),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
@@ -617,7 +614,7 @@ fun AdultDetailScreen(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = LogoBlue
+                        color = if (isDark) White else LogoBlue
                     )
                 }
 
@@ -628,7 +625,7 @@ fun AdultDetailScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -638,11 +635,12 @@ fun AdultDetailScreen(
 
 @Composable
 private fun InfoTileRow(label: String, value: String) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .background(color = PillGrey, shape = RoundedCornerShape(14.dp))
+            .background(color = if (isDark) DarkPill else PillGrey, shape = RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Column {
@@ -651,7 +649,7 @@ private fun InfoTileRow(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
-                color = PlaceholderColor,
+                color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                 letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -660,7 +658,7 @@ private fun InfoTileRow(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp,
-                color = if (value.isNotEmpty()) TileTextColor else PlaceholderColor
+                color = if (value.isNotEmpty()) (if (isDark) White else Color(0xFF111827)) else (if (isDark) DarkTextSecondary else Color(0xFF4B5563))
             )
         }
     }
@@ -672,11 +670,12 @@ private fun PasswordTileRow(
     isVisible: Boolean,
     onToggle: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .background(color = PillGrey, shape = RoundedCornerShape(14.dp))
+            .background(color = if (isDark) DarkPill else PillGrey, shape = RoundedCornerShape(14.dp))
             .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp)
     ) {
         Row(
@@ -689,7 +688,7 @@ private fun PasswordTileRow(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Medium,
                     fontSize = 11.sp,
-                    color = PlaceholderColor,
+                    color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                     letterSpacing = 0.5.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
@@ -698,14 +697,14 @@ private fun PasswordTileRow(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = TileTextColor
+                    color = if (isDark) White else Color(0xFF111827)
                 )
             }
             IconButton(onClick = onToggle) {
                 Icon(
                     imageVector = if (isVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                     contentDescription = if (isVisible) "Hide" else "Show",
-                    tint = PlaceholderColor
+                    tint = if (isDark) DarkTextSecondary else Color(0xFF4B5563)
                 )
             }
         }
@@ -725,6 +724,7 @@ private fun AddAdultDialog(
     var error     by remember { mutableStateOf("") }
     var checking  by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -736,7 +736,7 @@ private fun AddAdultDialog(
                 fontFamily = InterFont,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
-                color = LogoBlue
+                color = if (isDark) White else LogoBlue
             )
         },
         text = {
@@ -807,7 +807,7 @@ private fun AddAdultDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
             }
         }
     )
@@ -818,10 +818,11 @@ private fun UkPhoneDialogField(
     digits: String,
     onDigitsChange: (String) -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -832,14 +833,14 @@ private fun UkPhoneDialogField(
                 fontFamily = InterFont,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
-                color = TileTextColor,
+                color = if (isDark) White else Color(0xFF111827),
                 modifier = Modifier.padding(start = 16.dp)
             )
             TextField(
                 value = digits,
                 onValueChange = { raw -> onDigitsChange(raw.filter { it.isDigit() }.take(9)) },
                 placeholder = {
-                    Text("Mobile Number", fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp)
+                    Text("Mobile Number", fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563), fontSize = 14.sp)
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
@@ -848,8 +849,8 @@ private fun UkPhoneDialogField(
                     unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor   = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor        = TileTextColor,
-                    unfocusedTextColor      = TileTextColor
+                    focusedTextColor        = if (isDark) White else Color(0xFF111827),
+                    unfocusedTextColor      = if (isDark) White else Color(0xFF111827)
                 ),
                 textStyle = LocalTextStyle.current.copy(
                     fontFamily = InterFont,
@@ -886,6 +887,7 @@ private fun EditAdultDialog(
     var error     by remember { mutableStateOf("") }
     var saving    by remember { mutableStateOf(false) }
     val scope     = rememberCoroutineScope()
+    val isDark    = isSystemInDarkTheme()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -896,7 +898,7 @@ private fun EditAdultDialog(
                 fontFamily = InterFont,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
-                color = LogoBlue
+                color = if (isDark) White else LogoBlue
             )
         },
         text = {
@@ -932,7 +934,7 @@ private fun EditAdultDialog(
                             text = "To change your password, sign out and use the reset option on the login screen.",
                             fontFamily = InterFont,
                             fontSize = 12.sp,
-                            color = InfoBlue,
+                            color = if (isDark) LightBlue else InfoBlue,
                             lineHeight = 17.sp
                         )
                     }
@@ -997,7 +999,7 @@ private fun EditAdultDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
             }
         }
     )
@@ -1009,16 +1011,17 @@ private fun DialogField(
     label: String,
     onValueChange: (String) -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(12.dp))
+            .background(color = if (isDark) DarkField else PillGrey, shape = RoundedCornerShape(12.dp))
     ) {
         TextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = {
-                Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp)
+                Text(label, fontFamily = InterFont, color = if (isDark) White.copy(alpha = 0.5f) else Color(0xFF4B5563), fontSize = 14.sp)
             },
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -1026,8 +1029,8 @@ private fun DialogField(
                 unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor   = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor        = TileTextColor,
-                unfocusedTextColor      = TileTextColor
+                focusedTextColor        = if (isDark) White else Color(0xFF111827),
+                unfocusedTextColor      = if (isDark) White else Color(0xFF111827)
             ),
             textStyle = LocalTextStyle.current.copy(
                 fontFamily = InterFont,
@@ -1041,11 +1044,12 @@ private fun DialogField(
 
 @Composable
 private fun LockedField(label: String, value: String) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = PillGrey.copy(alpha = 0.5f),
+                color = if (isDark) DarkPill.copy(alpha = 0.5f) else PillGrey.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -1056,7 +1060,7 @@ private fun LockedField(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.Medium,
                 fontSize = 10.sp,
-                color = PlaceholderColor.copy(alpha = 0.7f),
+                color = if (isDark) White.copy(alpha = 0.4f) else Color(0xFF4B5563).copy(alpha = 0.7f),
                 letterSpacing = 0.3.sp
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -1065,7 +1069,7 @@ private fun LockedField(label: String, value: String) {
                 fontFamily = InterFont,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
-                color = PlaceholderColor
+                color = if (isDark) White.copy(alpha = 0.6f) else Color(0xFF4B5563)
             )
         }
     }
@@ -1080,6 +1084,7 @@ private fun DeleteAccountConfirmationDialog(
 ) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1125,13 +1130,14 @@ private fun DeleteAccountConfirmationDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Enter your password to confirm") },
+                    label = { Text("Enter your password to confirm", color = if (isDark) White.copy(alpha = 0.7f) else Color.Unspecified) },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = if (isDark) White else Color.Unspecified
                             )
                         }
                     },
@@ -1140,7 +1146,9 @@ private fun DeleteAccountConfirmationDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = ErrorRed,
-                        focusedLabelColor = ErrorRed
+                        focusedLabelColor = ErrorRed,
+                        focusedTextColor = if (isDark) White else Color.Unspecified,
+                        unfocusedTextColor = if (isDark) White else Color.Unspecified
                     )
                 )
 
@@ -1177,7 +1185,7 @@ private fun DeleteAccountConfirmationDialog(
                 onClick = onDismiss,
                 enabled = !isDeleting
             ) {
-                Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
             }
         }
     )

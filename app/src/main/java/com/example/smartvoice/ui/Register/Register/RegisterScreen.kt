@@ -5,8 +5,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -76,6 +78,7 @@ fun RegisterScreen(
     var accountCreatedMessage by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
 
     val allFieldsFilled =
         firstName.isNotBlank() &&
@@ -160,7 +163,7 @@ fun RegisterScreen(
                             letterSpacing = (-2.5).sp,
                             fontWeight = FontWeight.ExtraBold
                         ),
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.padding(bottom = 18.dp)
                     )
 
@@ -286,7 +289,7 @@ fun RegisterScreen(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-2.5).sp
                         ),
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
@@ -303,9 +306,10 @@ private fun UsernameAtField(
     showError: Boolean,
     errorText: String
 ) {
+    val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(14.dp)
-    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
-    val placeholderColor = Color(0xFF4B5563)
+    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = if (isDark) White else Color(0xFF111827))
+    val placeholderColor = if (isDark) White.copy(alpha = 0.6f) else Color(0xFF4B5563)
 
     CompositionLocalProvider(LocalContentAlpha provides 1f) {
         OutlinedTextField(
@@ -323,7 +327,7 @@ private fun UsernameAtField(
             leadingIcon = {
                 Text(
                     text = "@",
-                    color = Color(0xFF111827),
+                    color = if (isDark) White else Color(0xFF111827),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(start = 12.dp)
@@ -331,7 +335,7 @@ private fun UsernameAtField(
             },
             placeholder = { Text("Username", color = placeholderColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = PillGrey,
+                backgroundColor = if (isDark) DarkField else PillGrey,
                 textColor = inputTextStyle.color,
                 cursorColor = BrightBlue,
                 focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue,
@@ -351,9 +355,10 @@ private fun UkPhoneField(
     showError: Boolean,
     errorText: String
 ) {
+    val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(14.dp)
-    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
-    val placeholderColor = Color(0xFF4B5563)
+    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = if (isDark) White else Color(0xFF111827))
+    val placeholderColor = if (isDark) White.copy(alpha = 0.6f) else Color(0xFF4B5563)
 
     CompositionLocalProvider(LocalContentAlpha provides 1f) {
         OutlinedTextField(
@@ -366,11 +371,11 @@ private fun UkPhoneField(
             shape = shape,
             isError = showError && errorText.isNotEmpty(),
             leadingIcon = {
-                Text("+44", color = Color(0xFF111827), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp))
+                Text("+44", color = if (isDark) White else Color(0xFF111827), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp))
             },
             placeholder = { Text("Mobile Number", color = placeholderColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = PillGrey,
+                backgroundColor = if (isDark) DarkField else PillGrey,
                 textColor = inputTextStyle.color,
                 cursorColor = LogoBlue,
                 focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue,
@@ -393,10 +398,11 @@ private fun PillOutlinedField(
     passwordVisible: Boolean = false,
     onTogglePassword: (() -> Unit)? = null
 ) {
+    val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(14.dp)
-    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
-    val placeholderColor = Color(0xFF4B5563)
-    val iconColor = Color(0xFF374151)
+    val inputTextStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = if (isDark) White else Color(0xFF111827))
+    val placeholderColor = if (isDark) White.copy(alpha = 0.6f) else Color(0xFF4B5563)
+    val iconColor = if (isDark) White else Color(0xFF374151)
 
     CompositionLocalProvider(LocalContentAlpha provides 1f) {
         OutlinedTextField(
@@ -421,7 +427,7 @@ private fun PillOutlinedField(
             modifier = Modifier.fillMaxWidth().height(68.dp).padding(vertical = 4.dp),
             shape = shape,
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = PillGrey,
+                backgroundColor = if (isDark) DarkField else PillGrey,
                 textColor = inputTextStyle.color,
                 cursorColor = LogoBlue,
                 focusedBorderColor = BrightBlue,
@@ -448,6 +454,7 @@ private fun GlowingLoginLink(
     text: String,
     onClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val glowColor = if (pressed) BrightBlue.copy(alpha = 0.15f) else Color.Transparent
@@ -456,7 +463,7 @@ private fun GlowingLoginLink(
         TextButton(
             onClick = onClick,
             interactionSource = interactionSource,
-            colors = ButtonDefaults.textButtonColors(contentColor = GreyDark)
+            colors = ButtonDefaults.textButtonColors(contentColor = if (isDark) LightBlue else GreyDark)
         ) {
             Text(text, style = MaterialTheme.typography.body2)
         }

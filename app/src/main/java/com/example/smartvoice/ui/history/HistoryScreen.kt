@@ -2,6 +2,7 @@ package com.example.smartvoice.ui.history
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,13 +28,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
 import com.example.smartvoice.ui.navigation.NavigationDestination
-import com.example.smartvoice.ui.theme.BrightBlue
-import com.example.smartvoice.ui.theme.ErrorRed
-import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LightBlue
-import com.example.smartvoice.ui.theme.LogoBlue
-import com.example.smartvoice.ui.theme.PillGrey
-import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -49,8 +44,6 @@ private val InterFont = FontFamily(
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
 
-private val TileTextColor    = Color(0xFF111827)
-private val PlaceholderColor = Color(0xFF4B5563)
 private const val PROCESSING_DURATION_MS = 10_000L
 private val dateTimeFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
 
@@ -84,6 +77,7 @@ fun HistoryScreen(
 ) {
     val viewModel: HistoryViewModel = viewModel(factory = viewModelFactory)
     val diagnoses by viewModel.diagnoses.collectAsState(initial = emptyList())
+    val isDark = isSystemInDarkTheme()
 
     val sortedDiagnoses = remember(diagnoses) {
         diagnoses.sortedByDescending { d ->
@@ -144,7 +138,7 @@ fun HistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deleteTargetIndex = null }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
                 }
             }
         )
@@ -179,7 +173,7 @@ fun HistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) LightBlue else LogoBlue)
                 }
             }
         )
@@ -194,7 +188,7 @@ fun HistoryScreen(
             confirmButton = {
                 Button(
                     onClick = { showComingSoon = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = LogoBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) BrightBlue else LogoBlue),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("OK", fontFamily = InterFont, color = White)
@@ -223,7 +217,7 @@ fun HistoryScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -233,7 +227,7 @@ fun HistoryScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -250,7 +244,7 @@ fun HistoryScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = PlaceholderColor,
+                            color = if (isDark) DarkTextSecondary else Color(0xFF4B5563),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -305,7 +299,7 @@ fun HistoryScreen(
                 Button(
                     onClick = { showComingSoon = true },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = White),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) DarkPill else White),
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, LightBlue),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
@@ -315,7 +309,7 @@ fun HistoryScreen(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = LogoBlue
+                        color = if (isDark) White else LogoBlue
                     )
                 }
 
@@ -343,7 +337,7 @@ fun HistoryScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    color = LogoBlue,
+                    color = if (isDark) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -360,6 +354,7 @@ fun HistoryRecordingTile(
     onDeleteClick: () -> Unit,
     onResultsClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     val infiniteTransition = rememberInfiniteTransition(label = "spin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -375,7 +370,7 @@ fun HistoryRecordingTile(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = PillGrey)
+        colors = CardDefaults.cardColors(containerColor = if (isDark) DarkPill else PillGrey)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -393,7 +388,7 @@ fun HistoryRecordingTile(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
-                        color = TileTextColor
+                        color = if (isDark) White else Color(0xFF111827)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(
@@ -405,14 +400,14 @@ fun HistoryRecordingTile(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Normal,
                             fontSize = 12.sp,
-                            color = PlaceholderColor
+                            color = if (isDark) DarkTextSecondary else Color(0xFF4B5563)
                         )
                         if (recordingTime.isNotEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .size(3.dp)
                                     .background(
-                                        color = PlaceholderColor.copy(alpha = 0.5f),
+                                        color = if (isDark) DarkTextSecondary.copy(alpha = 0.5f) else Color(0xFF4B5563).copy(alpha = 0.5f),
                                         shape = RoundedCornerShape(50)
                                     )
                             )
@@ -421,7 +416,7 @@ fun HistoryRecordingTile(
                                 fontFamily = InterFont,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 12.sp,
-                                color = PlaceholderColor
+                                color = if (isDark) DarkTextSecondary else Color(0xFF4B5563)
                             )
                         }
                     }
@@ -443,14 +438,14 @@ fun HistoryRecordingTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFD1D9E6))
+                    .background(if (isDark) DarkDivider else Color(0xFFD1D9E6))
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xFFF0F4FF),
+                        color = if (isDark) DarkSurface else Color(0xFFF0F4FF),
                         shape = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp)
                     )
                     .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -491,8 +486,8 @@ fun HistoryRecordingTile(
                         enabled  = false,
                         shape    = RoundedCornerShape(20.dp),
                         colors   = ButtonDefaults.buttonColors(
-                            disabledContainerColor = Color(0xFFCFD8DC),
-                            disabledContentColor   = Color(0xFF90A4AE)
+                            disabledContainerColor = if (isDark) Color(0xFF334155) else Color(0xFFCFD8DC),
+                            disabledContentColor   = if (isDark) Color(0xFF64748B) else Color(0xFF90A4AE)
                         ),
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
                         modifier = Modifier.height(34.dp)
@@ -508,7 +503,7 @@ fun HistoryRecordingTile(
                     Box(
                         modifier = Modifier
                             .background(
-                                color = Color(0xFF1B5E20).copy(alpha = 0.10f),
+                                color = if (isDark) DarkReadyBg else Color(0xFF1B5E20).copy(alpha = 0.10f),
                                 shape = RoundedCornerShape(20.dp)
                             )
                             .padding(horizontal = 12.dp, vertical = 5.dp)
@@ -518,7 +513,7 @@ fun HistoryRecordingTile(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
-                            color = Color(0xFF2E7D32)
+                            color = if (isDark) DarkReadyGreen else Color(0xFF2E7D32)
                         )
                     }
                     Button(

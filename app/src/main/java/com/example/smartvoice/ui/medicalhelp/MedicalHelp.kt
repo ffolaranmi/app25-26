@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,11 +35,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
-import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LightBlue
-import com.example.smartvoice.ui.theme.LogoBlue
-
-private val AnswerGrey = Color(0xFFDDE3EC)
+import com.example.smartvoice.ui.theme.*
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -87,6 +84,7 @@ fun FindMedicalHelpScreen(
     viewModel: FindMedicalHelpViewModel = viewModel(factory = FindMedicalHelpViewModelFactory())
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     var showNonEmergencyInfo by remember { mutableStateOf(false) }
     var showEmergencyInfo by remember { mutableStateOf(false) }
 
@@ -111,12 +109,12 @@ fun FindMedicalHelpScreen(
                                 Text(
                                     text = "NHS 111 — UK non-emergency\nmedical helpline",
                                     fontSize = 11.sp,
-                                    color = LogoBlue,
+                                    color = if (isDark) White else LogoBlue,
                                     fontWeight = FontWeight.Medium,
                                     fontFamily = InterFont,
                                     modifier = Modifier
                                         .padding(bottom = 6.dp)
-                                        .background(LightBlue, RoundedCornerShape(6.dp))
+                                        .background(if (isDark) DarkPill else LightBlue, RoundedCornerShape(6.dp))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -220,7 +218,7 @@ fun FindMedicalHelpScreen(
                         fontFamily = InterFont,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 22.sp,
-                        color = LogoBlue
+                        color = if (isDark) White else LogoBlue
                     )
                 }
             }
@@ -244,7 +242,7 @@ fun FindMedicalHelpScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isDark) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -254,7 +252,7 @@ fun FindMedicalHelpScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isDark) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -275,6 +273,7 @@ fun FindMedicalHelpScreen(
 @Composable
 fun FaqDropdownItem(faq: FaqItem) {
     var expanded by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
 
     val interFont = FontFamily(
         Font(R.font.inter_regular, FontWeight.Normal),
@@ -288,7 +287,7 @@ fun FaqDropdownItem(faq: FaqItem) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(LightBlue)
+                .background(if (isDark) DarkPill else LightBlue)
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
@@ -299,7 +298,7 @@ fun FaqDropdownItem(faq: FaqItem) {
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = LogoBlue,
+                    tint = if (isDark) White else LogoBlue,
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -308,7 +307,7 @@ fun FaqDropdownItem(faq: FaqItem) {
                     fontFamily = interFont,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = LogoBlue
+                    color = if (isDark) White else LogoBlue
                 )
             }
         }
@@ -322,14 +321,14 @@ fun FaqDropdownItem(faq: FaqItem) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-                    .background(AnswerGrey)
+                    .background(if (isDark) DarkSurface else Color(0xFFDDE3EC))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
                     text = faq.answer,
                     fontFamily = interFont,
                     fontSize = 14.sp,
-                    color = Color.DarkGray
+                    color = if (isDark) DarkTextPrimary else Color.DarkGray
                 )
             }
         }

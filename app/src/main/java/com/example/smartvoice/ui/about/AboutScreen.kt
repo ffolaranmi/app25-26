@@ -1,5 +1,6 @@
 package com.example.smartvoice.ui.about
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -12,6 +13,8 @@ import com.example.smartvoice.R
 import com.example.smartvoice.SmartVoiceTopAppBar
 import com.example.smartvoice.ui.AppViewModelProvider
 import com.example.smartvoice.ui.navigation.NavigationDestination
+import com.example.smartvoice.ui.theme.GradientBackground
+import com.example.smartvoice.ui.theme.White
 
 object AboutDestination : NavigationDestination {
     override val route = "About"
@@ -25,18 +28,21 @@ fun AboutScreen(
     navigateBack: () -> Unit,
 ){
     Scaffold(
-    topBar = {
-        SmartVoiceTopAppBar(
-            title = stringResource(id = AboutDestination.titleRes),
-            canNavigateBack = true,
-            navigateUp = navigateBack,
-        )
-    }
+        backgroundColor = androidx.compose.ui.graphics.Color.Transparent,
+        topBar = {
+            SmartVoiceTopAppBar(
+                title = stringResource(id = AboutDestination.titleRes),
+                canNavigateBack = true,
+                navigateUp = navigateBack,
+            )
+        }
     ){
         innerpadding ->
-        AboutBody(
-            modifier = modifier.padding(innerpadding)
-        )
+        GradientBackground {
+            AboutBody(
+                modifier = modifier.padding(innerpadding)
+            )
+        }
     }
 }
 
@@ -44,10 +50,11 @@ fun AboutScreen(
 private fun AboutBody(
     modifier: Modifier = Modifier
 ){
+    val isDark = isSystemInDarkTheme()
     Column(
         modifier = modifier.fillMaxSize()
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
@@ -56,7 +63,8 @@ private fun AboutBody(
             text ="The objective of Smart Voice is to create a smart phone application that can identify and diagnose recurrent respiratory papilloma (RRP) disease.  RRP is a condition that is characterized by the presence of wart like growths called papilloma in the respiratory retract which causes problems for the airway to function properly. \n" +
                     "\n" +
                     "Deep Learning (DL) techniques are used to analyse voice samples throughout the detection process to determine whether the patient has RRP or not.  ",
-            style = MaterialTheme.typography.h6
+            style = MaterialTheme.typography.h6,
+            color = if (isDark) White else MaterialTheme.colors.onBackground
         )
     }
 }

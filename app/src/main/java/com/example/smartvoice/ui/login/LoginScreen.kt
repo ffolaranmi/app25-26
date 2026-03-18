@@ -1,5 +1,7 @@
 package com.example.smartvoice.ui.login
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -18,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartvoice.R
 import com.example.smartvoice.SmartVoiceApplication
 import com.example.smartvoice.data.SmartVoiceDatabase
 import com.example.smartvoice.ui.AppViewModelProvider
@@ -85,6 +89,7 @@ private fun LoginBody(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
 
     var usernameCore by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -102,15 +107,12 @@ private fun LoginBody(
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "SmartVoice",
-                style = MaterialTheme.typography.h3.copy(
-                    fontSize = 44.sp,
-                    letterSpacing = (-3.0).sp,
-                    fontWeight = FontWeight.ExtraBold
-                ),
-                color = LogoBlue,
-                modifier = Modifier.padding(bottom = 22.dp)
+            Image(
+                painter = painterResource(id = R.drawable.smartvoicelogo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(260.dp)
+                    .padding(bottom = 22.dp)
             )
 
             UsernameAtLoginField(
@@ -226,7 +228,7 @@ private fun LoginBody(
         Text(
             text = "University of Strathclyde 2026",
             style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colors.onBackground.copy(alpha = 0.75f),
+            color = if (isDark) White.copy(alpha = 0.75f) else MaterialTheme.colors.onBackground.copy(alpha = 0.75f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 20.dp)
