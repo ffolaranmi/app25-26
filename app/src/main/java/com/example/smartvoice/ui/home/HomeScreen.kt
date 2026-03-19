@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.offset
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
@@ -71,6 +73,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val userId  = remember { SessionPrefs.getLoggedInUserId(context) }
+    val isDark = isSystemInDarkTheme()
 
     val accountVm: AccountInfoViewModel? = if (database != null) {
         viewModel(factory = AccountInfoViewModelFactory(database, context))
@@ -168,18 +171,20 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
-                    text = "SmartVoice",
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 36.sp,
-                    letterSpacing = (-1.2).sp,
-                    color = LogoBlue
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.smartvoicelogo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(240.dp)
+                            .offset(y = (-16).dp)
+                    )
+                }
 
                 TileGrid(
                     onTileClick = navigateToScreenOption,
@@ -192,7 +197,7 @@ fun HomeScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
-                    color = Color(0xFF6B6B6B),
+                    color = if (isDark) White.copy(alpha = 0.7f) else Color(0xFF6B6B6B),
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(top = 20.dp).padding(horizontal = 10.dp).fillMaxWidth()
                 )
@@ -208,7 +213,7 @@ fun HomeScreen(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 12.sp,
-                    color = Color(0xFF444444),
+                    color = if (isDark) White.copy(alpha = 0.85f) else Color(0xFF444444),
                     modifier = Modifier.padding(bottom = 10.dp)
                 )
             }
@@ -290,6 +295,8 @@ private fun Tile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.then(modifier),
@@ -313,7 +320,9 @@ private fun Tile(
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(0.9f),
                 contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(BrightBlue.copy(alpha = 0.8f))
+                colorFilter = ColorFilter.tint(
+                    if (isDark) White.copy(alpha = 0.8f) else BrightBlue.copy(alpha = 0.8f)
+                )
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -322,7 +331,7 @@ private fun Tile(
             fontFamily = InterFont,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 13.sp,
-            color = LogoBlue,
+            color = if (isDark) White else LogoBlue,
             textAlign = TextAlign.Center,
             maxLines = 2,
             lineHeight = 14.sp

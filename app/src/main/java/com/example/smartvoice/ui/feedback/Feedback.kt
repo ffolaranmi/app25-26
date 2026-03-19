@@ -1,6 +1,7 @@
 package com.example.smartvoice.ui.feedback
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,9 @@ import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LightBlue
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.DarkPill
+import com.example.smartvoice.ui.theme.DarkTextPrimary
+import com.example.smartvoice.ui.theme.DarkTextSecondary
 import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import android.content.Intent
@@ -80,7 +84,7 @@ fun FeedbackScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -90,7 +94,7 @@ fun FeedbackScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -100,7 +104,9 @@ fun FeedbackScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = PillGrey),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSystemInDarkTheme()) DarkPill else PillGrey
+                    ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
@@ -123,7 +129,7 @@ fun FeedbackScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 24.sp,
-                            color = TileTextColor,
+                            color = if (isSystemInDarkTheme()) DarkTextPrimary else TileTextColor,
                             textAlign = TextAlign.Center
                         )
 
@@ -134,7 +140,7 @@ fun FeedbackScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = PlaceholderColor,
+                            color = if (isSystemInDarkTheme()) DarkTextSecondary else PlaceholderColor,
                             textAlign = TextAlign.Center,
                             lineHeight = 24.sp
                         )
@@ -177,7 +183,7 @@ fun FeedbackScreen(
                     text = "You'll be redirected to a Google Form.",
                     fontFamily = InterFont,
                     fontSize = 14.sp,
-                    color = PlaceholderColor,
+                    color = if (isSystemInDarkTheme()) DarkTextSecondary else PlaceholderColor,
                     textAlign = TextAlign.Center
                 )
 
@@ -189,7 +195,7 @@ fun FeedbackScreen(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     letterSpacing = (-1.5).sp,
-                    color = LogoBlue,
+                    color = if (isSystemInDarkTheme()) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }

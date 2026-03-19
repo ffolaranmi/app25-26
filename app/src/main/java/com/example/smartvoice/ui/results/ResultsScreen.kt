@@ -3,6 +3,7 @@ package com.example.smartvoice.ui.results
 import android.media.MediaPlayer
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -31,6 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
 import com.example.smartvoice.ui.navigation.NavigationDestination
 import com.example.smartvoice.ui.theme.BrightBlue
+import com.example.smartvoice.ui.theme.DarkField
+import com.example.smartvoice.ui.theme.DarkPill
+import com.example.smartvoice.ui.theme.DarkSurface
+import com.example.smartvoice.ui.theme.DarkTextPrimary
+import com.example.smartvoice.ui.theme.DarkTextSecondary
 import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LogoBlue
@@ -129,6 +135,7 @@ fun ResultsScreen(
     val viewModel: ResultsViewModel = viewModel(factory = viewModelFactory)
     val diagnoses by viewModel.diagnoses.collectAsState(initial = emptyList())
     val isServerConnected by viewModel.isServerConnected.collectAsState(initial = false)
+    val isDark = isSystemInDarkTheme()
 
     val sortedDiagnoses = remember(diagnoses) {
         diagnoses.sortedByDescending { d ->
@@ -172,7 +179,12 @@ fun ResultsScreen(
             onDismissRequest = { deleteTargetIndex = null },
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text("Delete Recording?", fontFamily = InterFont, fontWeight = FontWeight.Bold)
+                Text(
+                    "Delete Recording?",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) White else Color.Unspecified
+                )
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -204,7 +216,11 @@ fun ResultsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deleteTargetIndex = null }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text(
+                        "Cancel",
+                        fontFamily = InterFont,
+                        color = if (isDark) White else LogoBlue
+                    )
                 }
             }
         )
@@ -215,7 +231,12 @@ fun ResultsScreen(
             onDismissRequest = { showClearAllDialog = false },
             shape = RoundedCornerShape(16.dp),
             title = {
-                Text("Clear All Recordings?", fontFamily = InterFont, fontWeight = FontWeight.Bold)
+                Text(
+                    "Clear All Recordings?",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) White else Color.Unspecified
+                )
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -239,7 +260,7 @@ fun ResultsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    Text("Cancel", fontFamily = InterFont, color = if (isDark) White else LogoBlue)
                 }
             }
         )
@@ -268,7 +289,7 @@ fun ResultsScreen(
                     "Analysis Result",
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
-                    color = LogoBlue
+                    color = if (isSystemInDarkTheme()) White else LogoBlue
                 )
             },
             text = {
@@ -307,7 +328,7 @@ fun ResultsScreen(
                         text = description,
                         fontFamily = InterFont,
                         fontSize = 14.sp,
-                        color = TileTextColor,
+                        color = if (isDark) DarkTextPrimary else TileTextColor,
                         textAlign = TextAlign.Center,
                         lineHeight = 20.sp
                     )
@@ -315,7 +336,7 @@ fun ResultsScreen(
                         text = "This is not a medical diagnosis. Always consult a qualified clinician.",
                         fontFamily = InterFont,
                         fontSize = 11.sp,
-                        color = PlaceholderColor,
+                        color = if (isDark) DarkTextSecondary else PlaceholderColor,
                         textAlign = TextAlign.Center,
                         lineHeight = 16.sp
                     )
@@ -328,7 +349,7 @@ fun ResultsScreen(
                         showResultDialog = null
                         selectedDiagnosisId = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = LogoBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isDark) BrightBlue else LogoBlue),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Close", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
@@ -357,7 +378,7 @@ fun ResultsScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -367,7 +388,7 @@ fun ResultsScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -384,7 +405,7 @@ fun ResultsScreen(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = PlaceholderColor,
+                            color = if (isDark) DarkTextSecondary else PlaceholderColor,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -418,42 +439,6 @@ fun ResultsScreen(
                                 )
                             }
                         }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(45.dp)
-                                .align(Alignment.TopCenter)
-                                .background(
-                                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFFF7FBFD),
-                                            Color(0xFFF7FBFD).copy(alpha = 0f)
-                                        ),
-                                        startY = 0f,
-                                        endY = 45f
-                                    )
-                                )
-                                .pointerInput(Unit) {}
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp)
-                                .align(Alignment.BottomCenter)
-                                .background(
-                                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFFC3D6F5).copy(alpha = 0f),
-                                            Color(0xFFC3D6F5 )
-                                        ),
-                                        startY = 0f,
-                                        endY = 60f
-                                    )
-                                )
-                                .pointerInput(Unit) {}
-                        )
                     }
                 }
 
@@ -506,7 +491,7 @@ fun ResultsScreen(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     letterSpacing = (-1.5).sp,
-                    color = LogoBlue,
+                    color = if (isSystemInDarkTheme()) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -527,6 +512,7 @@ fun ResultsRecordingTile(
     onRetryClick: () -> Unit,
     context: android.content.Context = LocalContext.current
 ) {
+    val isDark = isSystemInDarkTheme()
     val infiniteTransition = rememberInfiniteTransition(label = "spin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -577,8 +563,14 @@ fun ResultsRecordingTile(
         }
     }
 
-    val backgroundColor = if (isViewed) PillGrey else Color(0xFFE3F2FD)
-    val titleColor = if (isViewed) TileTextColor else LogoBlue
+    val backgroundColor = if (isViewed) {
+        if (isDark) DarkPill else PillGrey
+    } else {
+        if (isDark) DarkSurface else Color(0xFFE3F2FD)
+    }
+    val tileTextColor = if (isDark) DarkTextPrimary else TileTextColor
+    val placeholderTextColor = if (isDark) DarkTextSecondary else PlaceholderColor
+    val titleColor = if (isViewed) tileTextColor else if (isDark) White else LogoBlue
 
     val fileExists = remember(recordingPath) {
         val file = File(recordingPath)
@@ -616,7 +608,7 @@ fun ResultsRecordingTile(
                                 modifier = Modifier
                                     .size(8.dp)
                                     .background(
-                                        color = LogoBlue,
+                                        color = if (isDark) BrightBlue else LogoBlue,
                                         shape = RoundedCornerShape(50)
                                     )
                             )
@@ -632,14 +624,14 @@ fun ResultsRecordingTile(
                             fontFamily = InterFont,
                             fontWeight = FontWeight.Normal,
                             fontSize = 12.sp,
-                            color = PlaceholderColor
+                            color = placeholderTextColor
                         )
                         if (recordingTime.isNotEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .size(3.dp)
                                     .background(
-                                        color = PlaceholderColor.copy(alpha = 0.5f),
+                                        color = placeholderTextColor.copy(alpha = 0.5f),
                                         shape = RoundedCornerShape(50)
                                     )
                             )
@@ -648,7 +640,7 @@ fun ResultsRecordingTile(
                                 fontFamily = InterFont,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 12.sp,
-                                color = PlaceholderColor
+                                color = placeholderTextColor
                             )
                         }
                     }
@@ -699,7 +691,7 @@ fun ResultsRecordingTile(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
-                        .background(Color(0xFFE3EFF8))
+                        .background(if (isDark) DarkField else Color(0xFFE3EFF8))
                 ) {
                     Box(
                         modifier = Modifier
@@ -714,7 +706,7 @@ fun ResultsRecordingTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xFFF0F4FF),
+                        color = if (isDark) DarkSurface else Color(0xFFF0F4FF),
                         shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
                     )
                     .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -811,7 +803,7 @@ fun ResultsRecordingTile(
                                 fontFamily = InterFont,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 14.sp,
-                                color = TileTextColor
+                                color = tileTextColor
                             )
 
                             if (!fileExists) {
@@ -820,7 +812,7 @@ fun ResultsRecordingTile(
                                     fontFamily = InterFont,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 11.sp,
-                                    color = PlaceholderColor
+                                    color = placeholderTextColor
                                 )
                             }
                         }

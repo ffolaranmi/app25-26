@@ -4,6 +4,7 @@ import com.example.smartvoice.ui.child.ChildViewModel
 import com.example.smartvoice.ui.child.ChildViewModelFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,6 +39,9 @@ import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LightBlue
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.DarkPill
+import com.example.smartvoice.ui.theme.DarkTextPrimary
+import com.example.smartvoice.ui.theme.DarkTextSecondary
 import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import java.util.Calendar
@@ -179,7 +183,7 @@ fun ChildInfoScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -189,7 +193,7 @@ fun ChildInfoScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -254,7 +258,7 @@ fun ChildInfoScreen(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     letterSpacing = (-1.5).sp,
-                    color = LogoBlue,
+                    color = if (isSystemInDarkTheme()) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -274,7 +278,7 @@ private fun ChildListTile(
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = PillGrey)
+        colors = CardDefaults.cardColors(containerColor = if (isSystemInDarkTheme()) DarkPill else PillGrey)
     ) {
         Row(
             modifier = Modifier
@@ -289,7 +293,7 @@ private fun ChildListTile(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 17.sp,
-                    color = TileTextColor
+                    color = if (isSystemInDarkTheme()) DarkTextPrimary else TileTextColor
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -297,14 +301,14 @@ private fun ChildListTile(
                     fontFamily = InterFont,
                     fontWeight = FontWeight.Normal,
                     fontSize = 13.sp,
-                    color = PlaceholderColor
+                    color = if (isSystemInDarkTheme()) DarkTextSecondary else PlaceholderColor
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = LogoBlue.copy(alpha = 0.5f),
+                    tint = if (isSystemInDarkTheme()) White.copy(alpha = 0.5f) else LogoBlue.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
                 )
                 IconButton(
@@ -371,7 +375,7 @@ fun ChildDetailScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -381,7 +385,7 @@ fun ChildDetailScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

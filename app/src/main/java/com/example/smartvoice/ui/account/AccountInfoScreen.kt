@@ -2,6 +2,7 @@ package com.example.smartvoice.ui.account
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,9 @@ import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LightBlue
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.DarkPill
+import com.example.smartvoice.ui.theme.DarkTextPrimary
+import com.example.smartvoice.ui.theme.DarkTextSecondary
 import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import kotlinx.coroutines.Dispatchers
@@ -182,7 +186,12 @@ fun AccountInfoScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     IconButton(onClick = navigateToHome) {
-                        Icon(Icons.Filled.Home, contentDescription = "Home", tint = LogoBlue, modifier = Modifier.size(48.dp))
+                        Icon(
+                            Icons.Filled.Home,
+                            contentDescription = "Home",
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
+                            modifier = Modifier.size(48.dp)
+                        )
                     }
                     Text(
                         text = "Adult Info",
@@ -190,7 +199,7 @@ fun AccountInfoScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -254,7 +263,7 @@ fun AccountInfoScreen(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     letterSpacing = (-1.5).sp,
-                    color = LogoBlue,
+                    color = if (isSystemInDarkTheme()) White else LogoBlue,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
             }
@@ -268,7 +277,7 @@ private fun AdultListTile(adult: User, isAccountHolder: Boolean, onClick: () -> 
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = PillGrey)
+        colors = CardDefaults.cardColors(containerColor = if (isSystemInDarkTheme()) DarkPill else PillGrey)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 14.dp, bottom = 14.dp),
@@ -278,7 +287,10 @@ private fun AdultListTile(adult: User, isAccountHolder: Boolean, onClick: () -> 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = adult.preferredName.ifBlank { "${adult.firstName} ${adult.lastName}".trim() }.ifEmpty { adult.username },
-                    fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = TileTextColor
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp,
+                    color = if (isSystemInDarkTheme()) DarkTextPrimary else TileTextColor
                 )
                 if (isAccountHolder) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -291,7 +303,12 @@ private fun AdultListTile(adult: User, isAccountHolder: Boolean, onClick: () -> 
                     }
                 }
             }
-            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = LogoBlue.copy(alpha = 0.5f), modifier = Modifier.size(22.dp))
+            Icon(
+                Icons.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = if (isSystemInDarkTheme()) White.copy(alpha = 0.5f) else LogoBlue.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }
@@ -340,7 +357,12 @@ fun AdultDetailScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     IconButton(onClick = navigateHome) {
-                        Icon(Icons.Filled.Home, contentDescription = "Home", tint = LogoBlue, modifier = Modifier.size(48.dp))
+                        Icon(
+                            Icons.Filled.Home,
+                            contentDescription = "Home",
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
+                            modifier = Modifier.size(48.dp)
+                        )
                     }
                     Text(
                         text = adult?.let { it.preferredName.ifBlank { "${it.firstName} ${it.lastName}".trim() } } ?: "Adult",
@@ -348,7 +370,7 @@ fun AdultDetailScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 32.sp,
                         letterSpacing = (-1.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

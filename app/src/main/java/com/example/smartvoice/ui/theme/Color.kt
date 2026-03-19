@@ -22,3 +22,12 @@ val RegalNavy = Color(0xFF061A3A)
 val DarkButton = Color(0xFF1B2F5A)
 val OnDarkButton = White
 val DarkField = Color(0xFF0B2550)
+
+// New Dark Mode Specific Colors
+val DarkSurface = Color(0xFF121B2E)
+val DarkPill = Color(0xFF1E293B)
+val DarkTextPrimary = Color(0xFFF1F5F9)
+val DarkTextSecondary = Color(0xFF94A3B8)
+val DarkDivider = Color(0xFF334155)
+val DarkReadyGreen = Color(0xFF4ADE80)
+val DarkReadyBg = Color(0xFF064E3B)

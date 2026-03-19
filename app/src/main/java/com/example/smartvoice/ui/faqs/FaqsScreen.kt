@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +38,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LightBlue
+import com.example.smartvoice.ui.theme.DarkSurface
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.White
 import com.example.smartvoice.ui.navigation.NavigationDestination
 
 private val AnswerGrey = Color(0xFFDDE3EC)
@@ -61,6 +64,7 @@ fun FaqsScreen(
     viewModel: FaqsViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
 
     GradientBackground {
         Scaffold(
@@ -177,7 +181,7 @@ fun FaqsScreen(
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Home",
-                            tint = LogoBlue,
+                            tint = if (isSystemInDarkTheme()) White else LogoBlue,
                             modifier = Modifier.size(48.dp)
                         )
                     }
@@ -187,7 +191,7 @@ fun FaqsScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 40.sp,
                         letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
+                        color = if (isSystemInDarkTheme()) White else LogoBlue,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -220,41 +224,6 @@ fun FaqsScreen(
                             }
                         }
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(45.dp)
-                            .align(Alignment.TopCenter)
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFFF7FBFD),
-                                        Color(0xFFF7FBFD).copy(alpha = 0f)
-                                    ),
-                                    startY = 0f,
-                                    endY = 45f
-                                )
-                            )
-                            .pointerInput(Unit) {}
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFFb2c9f2).copy(alpha = 0f),
-                                        Color(0xFFb2c9f2)
-                                    ),
-                                    startY = 0f,
-                                    endY = 60f
-                                )
-                            )
-                            .pointerInput(Unit) {}
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

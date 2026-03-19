@@ -1,18 +1,20 @@
 package com.example.smartvoice
 
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.smartvoice.ui.navigation.SmartVoiceNavHost
 import com.example.smartvoice.data.SmartVoiceDatabase
+import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.theme.RegalNavy
 
 /**
  * Top level composable that represents screens for the application.
@@ -40,11 +42,17 @@ fun SmartVoiceTopAppBar(
     modifier: Modifier = Modifier,
     navigateUp: () -> Unit = {}
 ) {
-    if (canNavigateBack) {
-        TopAppBar(
-            title = { Text(title) },
-            modifier = modifier,
-            navigationIcon = {
+    val isDark = isSystemInDarkTheme()
+    val bgColor = if (isDark) RegalNavy else LogoBlue
+    val contentColor = White
+
+    TopAppBar(
+        title = { Text(title) },
+        modifier = modifier,
+        backgroundColor = bgColor,
+        contentColor = contentColor,
+        navigationIcon = if (canNavigateBack) {
+            {
                 IconButton(onClick = navigateUp) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
@@ -52,10 +60,8 @@ fun SmartVoiceTopAppBar(
                     )
                 }
             }
-        )
-    } else {
-        TopAppBar(title = { Text(title) }, modifier = modifier)
-    }
+        } else null
+    )
 }
 
 // hello :)
