@@ -181,16 +181,14 @@ class RecordViewModel(
         }
     }
 
-    fun insertDiagnosis(diagnosisTable: DiagnosisTable) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    smartVoiceDatabase.diagnosisDao().insertNewDiagnosis(diagnosisTable)
-                    Log.d("RecordViewModel", "Diagnosis inserted: ${diagnosisTable.patientName}")
-                    Log.d("RecordViewModel", "Recording path saved: ${diagnosisTable.recordingPath}")
-                } catch (e: Exception) {
-                    Log.e("RecordViewModel", "Failed to insert diagnosis", e)
-                }
+    suspend fun insertDiagnosis(diagnosisTable: DiagnosisTable) {
+        withContext(Dispatchers.IO) {
+            try {
+                smartVoiceDatabase.diagnosisDao().insertNewDiagnosis(diagnosisTable)
+                Log.d("RecordViewModel", "Diagnosis inserted: ${diagnosisTable.patientName}")
+                Log.d("RecordViewModel", "Recording path saved: ${diagnosisTable.recordingPath}")
+            } catch (e: Exception) {
+                Log.e("RecordViewModel", "Failed to insert diagnosis", e)
             }
         }
     }

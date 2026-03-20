@@ -53,25 +53,36 @@ object PasswordGenerator {
         "zaire", "zonal", "zoned", "zones", "zonal", "zoic", "zoeas", "zombi", "zonal", "zymes"
     )
 
-    private val romanLanguages = listOf(
-        "abate", "abbey", "ached", "aches", "acier", "acres", "adieu", "adobo", "agape", "agile",
-        "aimer", "aired", "album", "alias", "alien", "align", "alike", "aloud", "amble", "amino",
-        "angel", "anger", "anglo", "anime", "ankhs", "annex", "anode", "anvil", "apart", "apres",
-        "arabe", "arete", "arise", "arson", "artsy", "ascot", "aster", "atoll",
-        "abeja", "abeto", "abhor", "abigo", "abime", "abire", "abisa", "abita", "abito", "ablao",
-        "ableu", "abogi", "abogo", "aboja", "aboli", "abolo", "abona", "abono", "abora", "aborc",
-        "abore", "abort", "abosa", "abose", "aboso", "abota", "abote", "aboto", "abous", "abouz",
-        "above", "aboza", "abozo", "abrac", "abrae", "abras",
-        "abaco", "abaio", "abala", "abali", "abalo", "abalu", "abama", "abami", "abamo", "abamu",
-        "abana", "abane", "abani", "abano", "abanu", "abapa", "abape", "abapi", "abapo", "abapu",
-        "abara", "abare", "abari", "abaro", "abaru", "abasa", "abase", "abasi", "abaso", "abasu",
-        "abata", "abate", "abati", "abato", "abatu"
+    private val spanishWords = listOf(
+        "abaco", "bacon", "cabra", "dador", "echar", "falso", "gafas", "haber", "ideas", "jabon",
+        "karma", "labio", "macho", "nabos", "obras", "pacto", "quema", "radio", "sabio", "tabla",
+        "vacas", "xenon", "yacer", "zorro", "acero", "broma", "cruce", "drama",
+        "selva", "firme", "gente", "huevo", "igual", "juego", "kepis", "largo", "mueca", "nieve",
+        "oeste", "punto", "queso", "rango", "suelo", "tren", "unido", "vuelo", "llama", "xileno",
+        "yerno", "zurdo", "aquel", "barco", "campo", "ducho", "enano", "fiero", "gordo", "helio",
+        "isla", "joven", "kilo", "lindo", "miedo", "nuevo", "orino", "pardo", "quijo", "roble",
+        "senda", "tinto", "usura", "vello", "tenaz", "yogur", "zafar", "andar", "besar"
+    )
+
+    private val italianWords = listOf(
+        "abate", "bacio", "casa", "dado", "erba", "falso", "gatto", "hotel", "indio", "jazz",
+        "kafka", "lago", "mare", "naso", "otto", "pacco", "quadro", "radio", "sacco", "tacco",
+        "uva", "vacca", "watt", "xenon", "yacht", "zaino", "accia", "brace", "cacio", "dazio",
+        "etere", "fiume", "gazza", "hobby", "inno", "jolly", "krapfen", "lutto", "mazzo", "notte",
+        "orzo", "pizzo", "quota", "razzo", "setta", "tazza", "umore", "vizio", "weekend", "xilofono",
+        "yogurt", "zuppa", "alato", "buono", "cotto", "dotto", "esame", "fatto", "gallo", "heimat",
+        "ira", "jazzista", "kantiano", "lotta", "motto", "noto", "ozono", "pasto", "quarto", "rallo",
+        "sasso", "tatto", "unico", "voto", "water", "xerico", "yoga", "zeta", "altra", "borsa"
     )
 
     fun generatePassword(): String {
-        val english1 = englishWords.random()
-        val english2 = englishWords.random()
-        val romance = romanLanguages.random()
-        return "$english1-$romance-$english2"
+        val passwordParts = listOf(
+            englishWords.random(),
+            spanishWords.random(),
+            italianWords.random()
+
+        ).shuffled()
+
+        return passwordParts.joinToString("-")
     }
 }

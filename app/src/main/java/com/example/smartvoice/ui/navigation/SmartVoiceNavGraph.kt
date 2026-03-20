@@ -61,7 +61,7 @@ fun SmartVoiceNavHost(
 
         composable("signup") {
             SignupScreen(
-                navigateToLogin = { navController.navigate("login") },
+                navigateToLogin = { navController.popBackStack() },
                 application = application
             )
         }
@@ -81,13 +81,13 @@ fun SmartVoiceNavHost(
 
         composable(ResultsDestination.route) {
             ResultsScreen(
-                navigateBack = {
+                navigateBack = { navController.popBackStack() },
+                navigateHome = {
                     navController.navigate(HomeDestination.route) {
                         popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                navigateToRecord = { navController.navigate(RecordDestination.route) },
                 viewModelFactory = AppViewModelProvider.Factory(application)
             )
         }
@@ -139,12 +139,7 @@ fun SmartVoiceNavHost(
         composable(ChildInfoDestination.route) {
             ChildInfoScreen(
                 database = database,
-                navigateBack = {
-                    navController.navigate(HomeDestination.route) {
-                        popUpTo(HomeDestination.route) { inclusive = false }
-                        launchSingleTop = true
-                    }
-                },
+                navigateBack = { navController.popBackStack() },
                 navigateToChildDetail = { childId ->
                     navController.navigate("${ChildDetailDestination.route}/$childId")
                 }
@@ -156,7 +151,6 @@ fun SmartVoiceNavHost(
             arguments = listOf(navArgument(ChildDetailDestination.childIdArg) { type = NavType.LongType })
         ) { backStackEntry ->
             val childId = backStackEntry.arguments?.getLong(ChildDetailDestination.childIdArg) ?: 0L
-
             ChildDetailScreen(
                 childId = childId,
                 database = database,
@@ -165,12 +159,6 @@ fun SmartVoiceNavHost(
                     navController.navigate(HomeDestination.route) {
                         popUpTo(HomeDestination.route) { inclusive = false }
                         launchSingleTop = true
-                    }
-                },
-                navigateToAllChildren = {
-                    navController.navigate(ChildInfoDestination.route) {
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )
@@ -215,7 +203,6 @@ fun SmartVoiceNavHost(
             arguments = listOf(navArgument(AdultDetailDestination.adultIdArg) { type = NavType.LongType })
         ) { backStackEntry ->
             val adultId = backStackEntry.arguments?.getLong(AdultDetailDestination.adultIdArg) ?: 0L
-
             AdultDetailScreen(
                 adultId = adultId,
                 database = database,
@@ -226,7 +213,7 @@ fun SmartVoiceNavHost(
                         launchSingleTop = true
                     }
                 },
-                navigateToAllAdults = { navController.popBackStack(AccountInfoDestination.route, inclusive = false) }
+                navigateToAllAdults = { navController.popBackStack() }
             )
         }
     }

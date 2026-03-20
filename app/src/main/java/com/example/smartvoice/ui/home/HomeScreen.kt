@@ -6,17 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PeopleOutline
 import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +45,8 @@ import com.example.smartvoice.ui.theme.BrightBlue
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LogoBlue
 import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.TutorialPrefs
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -70,7 +69,7 @@ fun HomeScreen(
     database: SmartVoiceDatabase? = null,
 ) {
     val context = LocalContext.current
-    val userId  = remember { SessionPrefs.getLoggedInUserId(context) }
+    val userId = remember { SessionPrefs.getLoggedInUserId(context) }
 
     val accountVm: AccountInfoViewModel? = if (database != null) {
         viewModel(factory = AccountInfoViewModelFactory(database, context))
@@ -81,57 +80,165 @@ fun HomeScreen(
     } else null
 
     val accountHolder by accountVm?.user?.collectAsState() ?: remember { mutableStateOf(null) }
-    val children      by childVm?.children?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    val children by childVm?.children?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
 
     var showFirstLoginDialog by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId != -1L) childVm?.loadChildren(userId)
     }
 
-    LaunchedEffect(accountHolder) {
-        if (accountHolder?.firstLoginFlag == true && children.isEmpty()) {
+    LaunchedEffect(userId) {
+        if (userId != -1L && !TutorialPrefs.hasSeen(context, userId)) {
+           // kotlinx.coroutines.delay(300)
+            showTutorial = true
+        }
+    }
+
+    LaunchedEffect(accountHolder, children, showTutorial, userId) {
+        if (
+            userId != -1L &&
+            !showTutorial &&
+            TutorialPrefs.hasSeen(context, userId) &&
+            accountHolder?.firstLoginFlag == true &&
+            children.isEmpty()
+        ) {
+           // kotlinx.coroutines.delay(200)
             showFirstLoginDialog = true
         }
     }
 
-    if (showFirstLoginDialog && accountHolder != null) {
+    GradientBackground {
+        Scaffold(containerColor = Color.Transparent) { innerPadding ->
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "SmartVoice",
+                            fontFamily = InterFont,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 36.sp,
+                            letterSpacing = (-1.2).sp,
+                            color = LogoBlue
+                        )
+                        IconButton(
+                            onClick = { showTutorial = true },
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.HelpOutline,
+                                contentDescription = "Help",
+                                tint = LogoBlue,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    TileGrid(
+                        onTileClick = navigateToScreenOption,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Created by Engineering and Humanities\nstudents at the University of Strathclyde.",
+                        textAlign = TextAlign.Center,
+                        fontFamily = InterFont,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                        color = Color(0xFF6B6B6B),
+                        lineHeight = 18.sp,
+                        modifier = Modifier
+                            .padding(top = 20.dp)
+                            .padding(horizontal = 10.dp)
+                            .fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(30.dp))
+
+                    LogoutButton(navigateToLogin)
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "University of Strathclyde 2026",
+                        fontFamily = InterFont,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        color = Color(0xFF444444),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
+            }
+        }
+    }
+
+    if (showFirstLoginDialog && !showTutorial && accountHolder != null) {
         AlertDialog(
             onDismissRequest = { },
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             containerColor = White,
             title = null,
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+
                     Box(
                         modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(color = BrightBlue),
+                            .fillMaxWidth()
+                            .height(100.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.childinfo),
                             contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            colorFilter = ColorFilter.tint(White)
+                            modifier = Modifier
+                                .size(120.dp)
+                                .offset(y = 10.dp),
+                            contentScale = ContentScale.Fit,
+                            colorFilter = ColorFilter.tint(LogoBlue)
                         )
                     }
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Add Your Child", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LogoBlue)
-                        Text(
-                            "Organize voice recordings and track results for your child.",
-                            fontFamily = InterFont, fontSize = 13.sp, color = Color(0xFF6B7280),
-                            textAlign = TextAlign.Center, lineHeight = 18.sp
-                        )
-                    }
+
+                    Text(
+                        "Add Children",
+                        fontFamily = InterFont,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp,
+                        color = LogoBlue,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        "Organise voice recordings and track results for your child.",
+                        fontFamily = InterFont,
+                        fontSize = 14.sp,
+                        color = Color(0xFF4B5563),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             },
             confirmButton = {
@@ -141,78 +248,52 @@ fun HomeScreen(
                         showFirstLoginDialog = false
                         navigateToScreenOption(ChildInfoDestination)
                     },
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Add Child", fontFamily = InterFont, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = White)
+                    Text(
+                        "Add Child",
+                        fontFamily = InterFont,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 15.sp,
+                        color = White
+                    )
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { accountVm?.markFirstLoginComplete(accountHolder!!); showFirstLoginDialog = false },
-                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                    onClick = {
+                        accountVm?.markFirstLoginComplete(accountHolder!!)
+                        showFirstLoginDialog = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
                 ) {
-                    Text("Maybe Later", fontFamily = InterFont, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF9CA3AF))
+                    Text(
+                        "Set Up Later",
+                        fontFamily = InterFont,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF9CA3AF)
+                    )
                 }
             }
         )
     }
 
-    GradientBackground {
-        Scaffold(containerColor = Color.Transparent) { innerPadding ->
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
-                    text = "SmartVoice",
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 36.sp,
-                    letterSpacing = (-1.2).sp,
-                    color = LogoBlue
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                TileGrid(
-                    onTileClick = navigateToScreenOption,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    text = "Created by Engineering and Humanities\nstudents at the University of Strathclyde.",
-                    textAlign = TextAlign.Center,
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    color = Color(0xFF6B6B6B),
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(top = 20.dp).padding(horizontal = 10.dp).fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(30.dp))
-
-                LogoutButton(navigateToLogin)
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = "University of Strathclyde 2026",
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp,
-                    color = Color(0xFF444444),
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
+    if (showTutorial) {
+        TutorialOverlay(
+            onFinish = {
+                if (userId != -1L) {
+                    TutorialPrefs.markSeen(context, userId)
+                }
+                showTutorial = false
             }
-        }
+        )
     }
 }
 
@@ -236,22 +317,21 @@ private fun TileGrid(
                 onClick = { onTileClick(RecordDestination) },
                 modifier = Modifier.weight(1f)
             )
-
             Tile(
                 drawableRes = R.drawable.results,
                 title = "RESULTS",
                 onClick = { onTileClick(ResultsDestination) },
                 modifier = Modifier.weight(1f)
             )
-
         }
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Tile(
                 drawableRes = R.drawable.accountinfo,
-                title = "ACCOUNT",
+                title = "ACCOUNT INFO",
                 onClick = { onTileClick(AccountInfoDestination) },
                 modifier = Modifier.weight(1f)
             )
@@ -262,6 +342,7 @@ private fun TileGrid(
                 modifier = Modifier.weight(1f)
             )
         }
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
@@ -282,7 +363,6 @@ private fun TileGrid(
     }
 }
 
-
 @Composable
 private fun Tile(
     drawableRes: Int,
@@ -299,11 +379,12 @@ private fun Tile(
             modifier = Modifier
                 .size(125.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(
-                    color = BrightBlue.copy(alpha = 0.1f)
-                )
+                .background(color = BrightBlue.copy(alpha = 0.1f))
                 .clickable(
-                    indication = rememberRipple(bounded = true, color = BrightBlue.copy(alpha = 0.2f)),
+                    indication = rememberRipple(
+                        bounded = true,
+                        color = BrightBlue.copy(alpha = 0.2f)
+                    ),
                     interactionSource = remember { MutableInteractionSource() }
                 ) { onClick() },
             contentAlignment = Alignment.Center
@@ -313,10 +394,12 @@ private fun Tile(
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(0.9f),
                 contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(BrightBlue.copy(alpha = 0.8f))
+                colorFilter = ColorFilter.tint(LogoBlue.copy(alpha = 0.8f))
             )
         }
+
         Spacer(modifier = Modifier.height(10.dp))
+
         Text(
             text = title,
             fontFamily = InterFont,
@@ -339,8 +422,13 @@ private fun LogoutButton(navigateToLogin: () -> Unit) {
             .height(48.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
         shape = RoundedCornerShape(12.dp)
-
     ) {
-        Text(text = "Logout", fontFamily = InterFont, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+        Text(
+            text = "Logout",
+            fontFamily = InterFont,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color.White
+        )
     }
 }

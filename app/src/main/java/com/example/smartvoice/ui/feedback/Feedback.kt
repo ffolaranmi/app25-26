@@ -1,11 +1,9 @@
 package com.example.smartvoice.ui.feedback
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,16 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.smartvoice.R
+import com.example.smartvoice.ui.components.SmartVoiceBottomBar
+import com.example.smartvoice.ui.components.SmartVoiceTopBar
+import com.example.smartvoice.ui.navigation.NavigationDestination
 import com.example.smartvoice.ui.theme.BrightBlue
 import com.example.smartvoice.ui.theme.ErrorRed
 import com.example.smartvoice.ui.theme.GradientBackground
-import com.example.smartvoice.ui.theme.LightBlue
 import com.example.smartvoice.ui.theme.LogoBlue
 import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import android.content.Intent
 import android.net.Uri
-import com.example.smartvoice.ui.navigation.NavigationDestination
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -54,7 +53,6 @@ fun FeedbackScreen(
     navigateHome: () -> Unit
 ) {
     val context = LocalContext.current
-
     val googleFormUrl = "https://forms.gle/sVdSmjXAgaHF9UA77"
 
     GradientBackground {
@@ -71,29 +69,7 @@ fun FeedbackScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    IconButton(onClick = navigateHome) {
-                        Icon(
-                            imageVector = Icons.Filled.Home,
-                            contentDescription = "Home",
-                            tint = LogoBlue,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                    Text(
-                        text = "Feedback",
-                        fontFamily = InterFont,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 40.sp,
-                        letterSpacing = (-2.5).sp,
-                        color = LogoBlue,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                SmartVoiceTopBar(title = "Feedback", onBack = navigateBack)
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -148,27 +124,13 @@ fun FeedbackScreen(
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(googleFormUrl))
                         context.startActivity(intent)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrightBlue,
-                        contentColor = White
-                    ),
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrightBlue, contentColor = White),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Icon(imageVector = Icons.Filled.Email, contentDescription = null, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Open Feedback Form",
-                        fontFamily = InterFont,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                    Text(text = "Open Feedback Form", fontFamily = InterFont, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -183,15 +145,9 @@ fun FeedbackScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                Text(
-                    text = "SmartVoice",
-                    fontFamily = InterFont,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 22.sp,
-                    letterSpacing = (-1.5).sp,
-                    color = LogoBlue,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                SmartVoiceBottomBar(onHomeClick = navigateHome)
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }

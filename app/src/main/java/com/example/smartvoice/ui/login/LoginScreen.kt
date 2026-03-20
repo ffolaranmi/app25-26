@@ -2,6 +2,7 @@ package com.example.smartvoice.ui.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -10,11 +11,17 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,6 +33,7 @@ import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LogoBlue
 import com.example.smartvoice.ui.theme.SmartVoiceOutlinedTextFieldColors
 import com.example.smartvoice.ui.theme.White
+import com.example.smartvoice.ui.components.SmartVoiceTopBar
 
 @Composable
 fun LoginScreen(
@@ -62,7 +70,9 @@ private fun isUsernameValid(usernameCore: String): Boolean {
 @Composable
 private fun UsernameAtLoginField(
     usernameCore: String,
-    onUsernameCoreChange: (String) -> Unit
+    onUsernameCoreChange: (String) -> Unit,
+    focusManager: FocusManager,
+    passwordFocusRequester: FocusRequester
 ) {
     OutlinedTextField(
         value = usernameCore,
@@ -70,12 +80,19 @@ private fun UsernameAtLoginField(
             val cleaned = raw
                 .filter { it.isLetterOrDigit() || it == '.' || it == '_' }
                 .take(12)
+                .lowercase()
             onUsernameCoreChange(cleaned)
         },
         label = { Text("Username") },
         leadingIcon = { Text("@", fontWeight = FontWeight.ExtraBold) },
         singleLine = true,
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Ascii),
+        keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = KeyboardType.Ascii,
+            imeAction = ImeAction.Next
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { passwordFocusRequester.requestFocus() }
+        ),
         modifier = Modifier
             .fillMaxWidth(0.9f)
             .padding(vertical = 8.dp),
@@ -92,6 +109,8 @@ private fun LoginBody(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val passwordFocusRequester = remember { FocusRequester() }
 
     var usernameCore by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -105,9 +124,40 @@ private fun LoginBody(
         if (uiState.savedUsername != null) {
             val savedUsername = uiState.savedUsername
             if (savedUsername != null) {
-                usernameCore = savedUsername.removePrefix("@")
+                usernameCore = savedUsername.removePrefix("@").lowercase()
             }
             rememberMe = true
+        }
+    }
+
+    fun attemptLogin() {
+        val core = usernameCore.trim().lowercase()
+
+        if (core.isBlank()) {
+            usernameError = "Enter a username"
+            errorMessage = ""
+            return
+        }
+
+        if (!isUsernameValid(core)) {
+            usernameError = "Invalid username"
+            errorMessage = ""
+            return
+        }
+
+        usernameError = ""
+
+        viewModel.loginUser(
+            context = context,
+            usernameInput = core,
+            password = password,
+            rememberMe = rememberMe
+        ) { isSuccess ->
+            if (isSuccess) {
+                onLoginSuccess()
+            } else {
+                errorMessage = "Invalid username or password. Please try again."
+            }
         }
     }
 
@@ -137,7 +187,9 @@ private fun LoginBody(
                     usernameCore = it
                     usernameError = ""
                     if (errorMessage.isNotEmpty()) errorMessage = ""
-                }
+                },
+                focusManager = focusManager,
+                passwordFocusRequester = passwordFocusRequester
             )
 
             OutlinedTextField(
@@ -147,7 +199,13 @@ private fun LoginBody(
                     if (errorMessage.isNotEmpty()) errorMessage = ""
                 },
                 label = { Text("Password") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
+                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -159,7 +217,8 @@ private fun LoginBody(
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 8.dp)
+                    .focusRequester(passwordFocusRequester),
                 colors = SmartVoiceOutlinedTextFieldColors()
             )
 
@@ -177,31 +236,46 @@ private fun LoginBody(
                     )
                 )
                 Text(
-                    text = "Remember Me",
+                    text = "Remember me",
                     modifier = Modifier.padding(start = 4.dp),
                     color = MaterialTheme.colors.onBackground.copy(alpha = 0.75f)
                 )
             }
 
-            if (usernameError.isNotEmpty()) {
-                Text(
-                    text = usernameError,
-                    color = MaterialTheme.colors.error,
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .padding(start = 6.dp, top = 2.dp)
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-            } else {
-                Spacer(modifier = Modifier.height(18.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(22.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (usernameError.isNotEmpty()) {
+                    Text(
+                        text = usernameError,
+                        color = MaterialTheme.colors.error,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start
+                    )
+                }
             }
 
-            if (errorMessage.isNotEmpty()) {
-                Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colors.error,
-                    modifier = Modifier.padding(bottom = 18.dp)
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(26.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colors.error,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             val buttonModifier = Modifier
@@ -209,32 +283,7 @@ private fun LoginBody(
                 .height(48.dp)
 
             Button(
-                onClick = {
-                    val core = usernameCore.trim()
-
-                    if (core.isBlank()) {
-                        usernameError = "Enter a username"
-                        return@Button
-                    }
-
-                    if (!isUsernameValid(core)) {
-                        usernameError = "Invalid username"
-                        return@Button
-                    }
-
-                    viewModel.loginUser(
-                        context = context,
-                        usernameInput = core,
-                        password = password,
-                        rememberMe = rememberMe
-                    ) { isSuccess ->
-                        if (isSuccess) {
-                            onLoginSuccess()
-                        } else {
-                            errorMessage = "Invalid username or password. Please try again."
-                        }
-                    }
-                },
+                onClick = { attemptLogin() },
                 modifier = buttonModifier,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(

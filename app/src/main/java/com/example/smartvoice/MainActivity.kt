@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.core.view.WindowCompat
 import com.example.smartvoice.ui.splash.SplashScreen
 import com.example.smartvoice.ui.theme.SmartVoiceTheme
 import kotlinx.coroutines.delay
@@ -11,7 +12,7 @@ import kotlinx.coroutines.delay
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         val application = application as SmartVoiceApplication
         val database = application.smartVoiceDatabase
 

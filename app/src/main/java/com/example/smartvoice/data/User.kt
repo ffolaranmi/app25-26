@@ -13,5 +13,6 @@ data class User(
     val phone: String = "",
     val password: String = "",
     val firstLoginFlag: Boolean = true,
-    val preferredName: String = ""
+    val preferredName: String = "",
+    val accountHolderId: Long? = null
 )
