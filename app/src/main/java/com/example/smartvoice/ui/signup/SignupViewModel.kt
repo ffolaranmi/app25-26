@@ -11,6 +11,44 @@ import kotlinx.coroutines.launch
 
 class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
 
+    fun checkSignupConflicts(
+        phone: String,
+        username: String,
+        email: String,
+        onResult: (emailExists: Boolean, usernameExists: Boolean, phoneExists: Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val emailTrimmed = email.trim()
+                val usernameTrimmed = username.trim()
+                val phoneTrimmed = phone.trim()
+
+                val emailExists = if (emailTrimmed.isNotBlank()) {
+                    database.userDao().checkIfEmailExists(emailTrimmed) > 0
+                } else {
+                    false
+                }
+
+                val usernameExists = if (usernameTrimmed.isNotBlank()) {
+                    database.userDao().checkIfUsernameExists(usernameTrimmed) > 0
+                } else {
+                    false
+                }
+
+                val phoneExists = if (phoneTrimmed.isNotBlank()) {
+                    database.userDao().checkIfPhoneExists(phoneTrimmed) > 0
+                } else {
+                    false
+                }
+
+                onResult(emailExists, usernameExists, phoneExists)
+            } catch (e: Exception) {
+                Log.e("SignupViewModel", "Error checking signup conflicts", e)
+                onResult(false, false, false)
+            }
+        }
+    }
+
     fun signupUser(
         context: Context,
         firstName: String,
@@ -24,10 +62,10 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
     ) {
         if (
             firstName.isBlank() ||
-            lastName.isBlank()  ||
-            phone.isBlank()     ||
-            username.isBlank()  ||
-            email.isBlank()     ||
+            lastName.isBlank() ||
+            phone.isBlank() ||
+            username.isBlank() ||
+            email.isBlank() ||
             password.isBlank()
         ) {
             Log.e("SignupViewModel", "Error: One or more required fields are empty.")
@@ -37,13 +75,13 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val emailTrimmed    = email.trim()
+                val emailTrimmed = email.trim()
                 val usernameTrimmed = username.trim()
-                val phoneTrimmed    = phone.trim()
+                val phoneTrimmed = phone.trim()
 
-                val emailExists    = database.userDao().checkIfEmailExists(emailTrimmed) > 0
+                val emailExists = database.userDao().checkIfEmailExists(emailTrimmed) > 0
                 val usernameExists = database.userDao().checkIfUsernameExists(usernameTrimmed) > 0
-                val phoneExists    = database.userDao().checkIfPhoneExists(phoneTrimmed) > 0
+                val phoneExists = database.userDao().checkIfPhoneExists(phoneTrimmed) > 0
 
                 when {
                     emailExists && usernameExists && phoneExists -> {
@@ -84,12 +122,12 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
                 }
 
                 val newUser = User(
-                    firstName     = firstName.trim(),
-                    lastName      = lastName.trim(),
-                    username      = usernameTrimmed,
-                    phone         = phoneTrimmed,
-                    email         = emailTrimmed,
-                    password      = password,
+                    firstName = firstName.trim(),
+                    lastName = lastName.trim(),
+                    username = usernameTrimmed,
+                    phone = phoneTrimmed,
+                    email = emailTrimmed,
+                    password = password,
                     preferredName = preferredName.trim()
                 )
 
@@ -103,7 +141,6 @@ class SignupViewModel(private val database: SmartVoiceDatabase) : ViewModel() {
 
                 Log.d("SignupViewModel", "User signed up successfully: $newUser")
                 onResult(true, "")
-
             } catch (e: Exception) {
                 Log.e("SignupViewModel", "Error signing up user", e)
                 onResult(false, "Account creation failed. Please try again")

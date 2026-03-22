@@ -101,7 +101,7 @@ private fun generateUsernameSuggestions(base: String): List<String> {
     } else {
         listOf("${clean}2", "${clean}10", "${clean}_1", "${clean}${clean.last()}", "${clean}_")
             .distinct()
-            .take(4)
+            .take(3)
     }
 }
 
@@ -171,6 +171,8 @@ fun SignupScreen(
         passwordError = ""
         confirmPasswordError = ""
         declarationError = ""
+        generalError = ""
+        usernameSuggestions = emptyList()
 
         var ok = true
 
@@ -178,33 +180,54 @@ fun SignupScreen(
             firstNameError = "Required"
             ok = false
         }
+
         if (lastName.isBlank()) {
             lastNameError = "Required"
             ok = false
         }
-        if (ukPhoneDigits.length !in 9..10) {
+
+        if (ukPhoneDigits.isBlank()) {
+            phoneError = "Required"
+            ok = false
+        } else if (ukPhoneDigits.length !in 9..10) {
             phoneError = "Must be 9 or 10 digits"
             ok = false
         }
 
         val emailTrimmed = email.trim()
-        val (emailValid, emailMsg) = isEmailValid(emailTrimmed)
-        if (!emailValid) {
-            emailError = emailMsg
+        if (emailTrimmed.isBlank()) {
+            emailError = "Required"
             ok = false
+        } else {
+            val (emailValid, emailMsg) = isEmailValid(emailTrimmed)
+            if (!emailValid) {
+                emailError = emailMsg
+                ok = false
+            }
         }
 
-        val (usernameValid, usernameMsg) = isUsernameValid(usernameCore)
-        if (!usernameValid) {
-            usernameError = usernameMsg
+        val usernameTrimmed = usernameCore.trim()
+        if (usernameTrimmed.isBlank()) {
+            usernameError = "Required"
             ok = false
+        } else {
+            val (usernameValid, usernameMsg) = isUsernameValid(usernameTrimmed)
+            if (!usernameValid) {
+                usernameError = usernameMsg
+                ok = false
+            }
         }
 
         val passwordToValidate = if (useGeneratedPassword) generatedPassword else password.text
-        val (passwordValid, passwordMsg) = isPasswordValid(passwordToValidate, useGeneratedPassword)
-        if (!passwordValid) {
-            passwordError = passwordMsg
+        if (passwordToValidate.isBlank()) {
+            passwordError = "Required"
             ok = false
+        } else {
+            val (passwordValid, passwordMsg) = isPasswordValid(passwordToValidate, useGeneratedPassword)
+            if (!passwordValid) {
+                passwordError = passwordMsg
+                ok = false
+            }
         }
 
         if (confirmPassword.text.isBlank()) {
@@ -247,48 +270,32 @@ fun SignupScreen(
         passwordError = ""
         confirmPasswordError = ""
         declarationError = ""
+        generalError = ""
         usernameSuggestions = emptyList()
     }
 
     fun handleServerError(msg: String) {
         val lower = msg.lowercase()
-        when {
-            lower.contains("email") && lower.contains("username") && lower.contains("phone") -> {
-                emailError = "Email already registered"
-                usernameError = "Username already taken"
-                phoneError = "Phone number already registered"
-                usernameSuggestions = generateUsernameSuggestions(usernameCore)
-            }
-            lower.contains("email") && lower.contains("username") -> {
-                emailError = "Email already registered"
-                usernameError = "Username already taken"
-                usernameSuggestions = generateUsernameSuggestions(usernameCore)
-            }
-            lower.contains("email") && lower.contains("phone") -> {
-                emailError = "Email already registered"
-                phoneError = "Phone number already registered"
-            }
-            lower.contains("username") && lower.contains("phone") -> {
-                usernameError = "Username already taken"
-                phoneError = "Phone number already registered"
-                usernameSuggestions = generateUsernameSuggestions(usernameCore)
-            }
-            lower.contains("email") -> {
-                emailError = "Email already registered"
-            }
-            lower.contains("username") -> {
-                usernameError = "Username already taken"
-                usernameSuggestions = generateUsernameSuggestions(usernameCore)
-            }
-            lower.contains("phone") -> {
-                phoneError = "Phone number already registered"
-            }
-            else -> {
-                generalError = msg
-                scope.launch {
-                    delay(4000)
-                    generalError = ""
-                }
+        generalError = ""
+
+        if (lower.contains("email")) {
+            emailError = "Email already registered"
+        }
+
+        if (lower.contains("username")) {
+            usernameError = "Username already taken"
+            usernameSuggestions = generateUsernameSuggestions(usernameCore)
+        }
+
+        if (lower.contains("phone")) {
+            phoneError = "Phone number already registered"
+        }
+
+        if (!lower.contains("email") && !lower.contains("username") && !lower.contains("phone")) {
+            generalError = msg
+            scope.launch {
+                delay(4000)
+                generalError = ""
             }
         }
     }
@@ -356,37 +363,53 @@ fun SignupScreen(
 
                     PillOutlinedField(
                         value = firstName,
-                        onValueChange = { firstName = filterAndCapitaliseName(it) },
+                        onValueChange = {
+                            firstName = filterAndCapitaliseName(it)
+                            if (submitAttempted) validateAll()
+                        },
                         placeholder = requiredLabel("First Name"),
-                        maxLength = 50
+                        maxLength = 50,
+                        isError = submitAttempted && firstNameError.isNotEmpty()
                     )
                     if (submitAttempted && firstNameError.isNotEmpty()) CompactErrorText(firstNameError)
 
                     PillOutlinedField(
                         value = preferredName,
-                        onValueChange = { preferredName = filterAndCapitaliseName(it) },
+                        onValueChange = {
+                            preferredName = filterAndCapitaliseName(it)
+                        },
                         placeholder = buildAnnotatedString { append("Preferred First Name") },
                         maxLength = 50
                     )
 
                     PillOutlinedField(
                         value = lastName,
-                        onValueChange = { lastName = filterAndCapitaliseName(it) },
+                        onValueChange = {
+                            lastName = filterAndCapitaliseName(it)
+                            if (submitAttempted) validateAll()
+                        },
                         placeholder = requiredLabel("Last Name"),
-                        maxLength = 50
+                        maxLength = 50,
+                        isError = submitAttempted && lastNameError.isNotEmpty()
                     )
                     if (submitAttempted && lastNameError.isNotEmpty()) CompactErrorText(lastNameError)
 
                     UkPhoneField(
                         digits = ukPhoneDigits,
-                        onDigitsChange = { ukPhoneDigits = it },
+                        onDigitsChange = {
+                            ukPhoneDigits = it
+                            if (submitAttempted) validateAll()
+                        },
                         showError = submitAttempted,
                         errorText = phoneError
                     )
 
                     PillOutlinedField(
                         value = email,
-                        onValueChange = { email = it.lowercase() },
+                        onValueChange = {
+                            email = it.lowercase()
+                            if (submitAttempted) validateAll()
+                        },
                         placeholder = requiredLabel("Email"),
                         keyboardType = KeyboardType.Email,
                         maxLength = 254,
@@ -399,7 +422,7 @@ fun SignupScreen(
                         onUsernameCoreChange = {
                             usernameCore = it
                             usernameSuggestions = emptyList()
-                            usernameError = ""
+                            if (submitAttempted) validateAll()
                         },
                         showError = submitAttempted,
                         errorText = usernameError
@@ -410,8 +433,8 @@ fun SignupScreen(
                             suggestions = usernameSuggestions,
                             onSuggestionClick = { suggestion ->
                                 usernameCore = suggestion
-                                usernameError = ""
                                 usernameSuggestions = emptyList()
+                                if (submitAttempted) validateAll()
                             }
                         )
                     }
@@ -419,7 +442,10 @@ fun SignupScreen(
                     if (useGeneratedPassword) {
                         GeneratedPasswordDisplay(
                             password = generatedPassword,
-                            onRegenerate = { generatedPassword = PasswordGenerator.generatePassword() }
+                            onRegenerate = {
+                                generatedPassword = PasswordGenerator.generatePassword()
+                                if (submitAttempted) validateAll()
+                            }
                         )
                         if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
 
@@ -427,6 +453,7 @@ fun SignupScreen(
                             onClick = {
                                 useGeneratedPassword = false
                                 password = TextFieldValue("")
+                                if (submitAttempted) validateAll()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 2.dp)
@@ -437,11 +464,13 @@ fun SignupScreen(
                         NoCopyPastePasswordField(
                             value = password,
                             onValueChange = { new ->
-                                if (new.text == password.text) password = new else password = new.copy(text = new.text)
+                                password = if (new.text == password.text) new else new.copy(text = new.text)
+                                if (submitAttempted) validateAll()
                             },
                             placeholder = requiredLabel("Password"),
                             passwordVisible = passwordVisible,
-                            onTogglePassword = { passwordVisible = !passwordVisible }
+                            onTogglePassword = { passwordVisible = !passwordVisible },
+                            isError = submitAttempted && passwordError.isNotEmpty()
                         )
                         if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
 
@@ -449,6 +478,7 @@ fun SignupScreen(
                             onClick = {
                                 useGeneratedPassword = true
                                 generatedPassword = PasswordGenerator.generatePassword()
+                                if (submitAttempted) validateAll()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 2.dp)
@@ -460,11 +490,13 @@ fun SignupScreen(
                     NoCopyPastePasswordField(
                         value = confirmPassword,
                         onValueChange = { new ->
-                            if (new.text == confirmPassword.text) confirmPassword = new else confirmPassword = new.copy(text = new.text)
+                            confirmPassword = if (new.text == confirmPassword.text) new else new.copy(text = new.text)
+                            if (submitAttempted) validateAll()
                         },
                         placeholder = requiredLabel("Confirm Password"),
                         passwordVisible = confirmPasswordVisible,
-                        onTogglePassword = { confirmPasswordVisible = !confirmPasswordVisible }
+                        onTogglePassword = { confirmPasswordVisible = !confirmPasswordVisible },
+                        isError = submitAttempted && confirmPasswordError.isNotEmpty()
                     )
                     if (submitAttempted && confirmPasswordError.isNotEmpty()) CompactErrorText(confirmPasswordError)
 
@@ -474,7 +506,7 @@ fun SignupScreen(
                         checked = isAdultConfirmed,
                         onCheckedChange = {
                             isAdultConfirmed = it
-                            if (it) declarationError = ""
+                            if (submitAttempted) validateAll()
                         }
                     )
                     if (submitAttempted && declarationError.isNotEmpty()) CompactErrorText(declarationError)
@@ -517,33 +549,55 @@ fun SignupScreen(
                     Button(
                         enabled = allFieldsFilled,
                         onClick = {
-                            generalError = ""
-                            emailError = ""
-                            usernameError = ""
-                            phoneError = ""
-                            declarationError = ""
-                            usernameSuggestions = emptyList()
                             submitAttempted = true
+                            generalError = ""
 
-                            if (!validateAll()) return@Button
+                            val localValid = validateAll()
 
-                            val finalPassword = if (useGeneratedPassword) generatedPassword else password.text
-
-                            viewModel.signupUser(
-                                context = context,
-                                firstName = toSentenceCase(firstName),
-                                lastName = toSentenceCase(lastName),
+                            viewModel.checkSignupConflicts(
                                 phone = "+44$ukPhoneDigits",
                                 username = "@${usernameCore.trim().lowercase()}",
-                                email = email.trim().lowercase(),
-                                password = finalPassword,
-                                preferredName = if (preferredName.isBlank()) "" else toSentenceCase(preferredName)
-                            ) { success, msg ->
-                                if (success) {
-                                    clearAllFields()
-                                    showAccountCreatedDialog = true
-                                } else {
-                                    handleServerError(msg)
+                                email = email.trim().lowercase()
+                            ) { emailExists, usernameExists, phoneExists ->
+
+                                if (emailExists) {
+                                    emailError = "Email already registered"
+                                }
+
+                                if (usernameExists) {
+                                    usernameError = "Username already taken"
+                                    usernameSuggestions = generateUsernameSuggestions(usernameCore)
+                                } else if (usernameError == "Username already taken") {
+                                    usernameError = ""
+                                    usernameSuggestions = emptyList()
+                                }
+
+                                if (phoneExists) {
+                                    phoneError = "Phone number already registered"
+                                }
+
+                                val hasConflict = emailExists || usernameExists || phoneExists
+
+                                if (!localValid || hasConflict) return@checkSignupConflicts
+
+                                val finalPassword = if (useGeneratedPassword) generatedPassword else password.text
+
+                                viewModel.signupUser(
+                                    context = context,
+                                    firstName = toSentenceCase(firstName),
+                                    lastName = toSentenceCase(lastName),
+                                    phone = "+44$ukPhoneDigits",
+                                    username = "@${usernameCore.trim().lowercase()}",
+                                    email = email.trim().lowercase(),
+                                    password = finalPassword,
+                                    preferredName = if (preferredName.isBlank()) "" else toSentenceCase(preferredName)
+                                ) { success, msg ->
+                                    if (success) {
+                                        clearAllFields()
+                                        showAccountCreatedDialog = true
+                                    } else {
+                                        handleServerError(msg)
+                                    }
                                 }
                             }
                         },
@@ -634,7 +688,8 @@ private fun NoCopyPastePasswordField(
     onValueChange: (TextFieldValue) -> Unit,
     placeholder: androidx.compose.ui.text.AnnotatedString,
     passwordVisible: Boolean = false,
-    onTogglePassword: () -> Unit
+    onTogglePassword: () -> Unit,
+    isError: Boolean = false
 ) {
     val shape = RoundedCornerShape(14.dp)
     val inputTextStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
@@ -648,6 +703,7 @@ private fun NoCopyPastePasswordField(
             }
         },
         singleLine = true,
+        isError = isError,
         placeholder = {
             Text(
                 placeholder,
@@ -678,8 +734,8 @@ private fun NoCopyPastePasswordField(
             backgroundColor = PillGrey,
             textColor = inputTextStyle.color,
             cursorColor = LogoBlue,
-            focusedBorderColor = BrightBlue,
-            unfocusedBorderColor = Color.Transparent,
+            focusedBorderColor = if (isError) MaterialTheme.colors.error else BrightBlue,
+            unfocusedBorderColor = if (isError) MaterialTheme.colors.error else Color.Transparent,
             disabledBorderColor = Color.Transparent,
             placeholderColor = placeholderColor
         )
@@ -701,7 +757,7 @@ private fun UsernameSuggestionsRow(
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF6B7280),
-            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            modifier = Modifier.padding(start = 4.dp, bottom = 5.dp)
         )
 
         Row(
@@ -710,15 +766,23 @@ private fun UsernameSuggestionsRow(
         ) {
             suggestions.forEach { suggestion ->
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = BrightBlue.copy(alpha = 0.1f)
+                    shape = RoundedCornerShape(14.dp),
+                    color = BrightBlue.copy(alpha = 0.08f),
+                    modifier = Modifier.height(28.dp)
                 ) {
-                    TextButton(
-                        onClick = { onSuggestionClick(suggestion) },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = BrightBlue)
+                    Box(
+                        modifier = Modifier
+                            .clickable { onSuggestionClick(suggestion) }
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("@$suggestion", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "@$suggestion",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = BrightBlue,
+                            maxLines = 1
+                        )
                     }
                 }
             }
