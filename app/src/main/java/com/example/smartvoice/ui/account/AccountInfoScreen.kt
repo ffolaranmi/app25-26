@@ -242,7 +242,15 @@ fun AccountInfoScreen(
             title = { Text("Remove Adult?", fontFamily = InterFont, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Are you sure you want to remove ${adult.preferredName.ifBlank { "${adult.firstName} ${adult.lastName}".trim() }}?", fontFamily = InterFont)
+                    Text(
+                        "Are you sure you want to remove ${
+                            if (adult.preferredName.isNotBlank())
+                                "${adult.preferredName} ${adult.lastName}".trim()
+                            else
+                                "${adult.firstName} ${adult.lastName}".trim()
+                        }?",
+                        fontFamily = InterFont
+                    )
                     Text("This action cannot be undone.", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = ErrorRed)
                 }
             },
@@ -319,7 +327,14 @@ private fun AdultListTile(adult: User, isAccountHolder: Boolean, onClick: () -> 
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(adult.preferredName.ifBlank { "${adult.firstName} ${adult.lastName}".trim() }.ifEmpty { adult.username }, fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = TileTextColor)
+                Text(
+                    (if (adult.preferredName.isNotBlank())
+                        "${adult.preferredName} ${adult.lastName}".trim()
+                    else
+                        "${adult.firstName} ${adult.lastName}".trim()
+                            ).ifEmpty { adult.username },
+                    fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = TileTextColor
+                )
                 if (isAccountHolder) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(modifier = Modifier.background(color = BrightBlue.copy(alpha = 0.12f), shape = RoundedCornerShape(20.dp)).padding(horizontal = 10.dp, vertical = 4.dp)) {
@@ -493,7 +508,15 @@ fun AdultDetailScreen(adultId: Long, database: SmartVoiceDatabase, navigateBack:
         Scaffold(containerColor = Color.Transparent) { innerPadding ->
             Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.height(24.dp))
-                SmartVoiceTopBar(title = adult?.let { it.preferredName.ifBlank { "${it.firstName} ${it.lastName}".trim() } } ?: "Adult", onBack = navigateBack)
+                SmartVoiceTopBar(
+                    title = adult?.let {
+                        if (it.preferredName.isNotBlank())
+                            "${it.preferredName} ${it.lastName}".trim()
+                        else
+                            "${it.firstName} ${it.lastName}".trim()
+                    } ?: "Adult",
+                    onBack = navigateBack
+                )
                 Spacer(modifier = Modifier.height(14.dp))
 
                 adult?.let { a ->
@@ -572,7 +595,6 @@ private fun EditAdultDialog(database: SmartVoiceDatabase, originalAdult: User, i
     var error by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -580,12 +602,12 @@ private fun EditAdultDialog(database: SmartVoiceDatabase, originalAdult: User, i
         title = { Text("Manage Adult", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = LogoBlue) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                EditDialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) }, keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
-                EditDialogField(value = preferredName, label = "Preferred First Name", onValueChange = { preferredName = filterNameInput(it) }, keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
-                EditDialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) }, keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
-                EditUkPhoneDialogField(digits = phoneDigits, onDigitsChange = { phoneDigits = it }, keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
+                EditDialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) })
+                EditDialogField(value = preferredName, label = "Preferred First Name", onValueChange = { preferredName = filterNameInput(it) })
+                EditDialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) })
+                EditUkPhoneDialogField(digits = phoneDigits, onDigitsChange = { phoneDigits = it })
                 if (isAccountHolder) {
-                    EditDialogField(value = username, label = "Username", onValueChange = { username = it }, keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
+                    EditDialogField(value = username, label = "Username", onValueChange = { username = it })
                 }
                 LockedField(label = "Email", value = originalAdult.email)
                 if (isAccountHolder) {
@@ -652,13 +674,11 @@ private fun UkPhoneDialogField(digits: String, isError: Boolean = false, keyboar
 }
 
 @Composable
-private fun EditDialogField(value: String, label: String, keyboardActions: KeyboardActions = KeyboardActions.Default, onValueChange: (String) -> Unit) {
+private fun EditDialogField(value: String, label: String, onValueChange: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         TextField(value = value, onValueChange = onValueChange,
             placeholder = { Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
             singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-            keyboardActions = keyboardActions,
             colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = TileTextColor, unfocusedTextColor = TileTextColor),
             textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
             modifier = Modifier.fillMaxWidth()
@@ -667,15 +687,14 @@ private fun EditDialogField(value: String, label: String, keyboardActions: Keybo
 }
 
 @Composable
-private fun EditUkPhoneDialogField(digits: String, keyboardActions: KeyboardActions = KeyboardActions.Default, onDigitsChange: (String) -> Unit) {
+private fun EditUkPhoneDialogField(digits: String, onDigitsChange: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Text("+44", fontFamily = InterFont, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TileTextColor, modifier = Modifier.padding(start = 16.dp))
             TextField(value = digits, onValueChange = { raw -> onDigitsChange(raw.filter { it.isDigit() }.take(10)) },
                 placeholder = { Text("Mobile Number", fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                keyboardActions = keyboardActions,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                 colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = TileTextColor, unfocusedTextColor = TileTextColor),
                 textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
                 modifier = Modifier.weight(1f).padding(start = 4.dp)
@@ -724,8 +743,6 @@ private fun DeleteAccountConfirmationDialog(onDismiss: () -> Unit, onConfirm: (S
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("ENTER PASSWORD TO CONFIRM", fontFamily = InterFont, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = TileTextColor, letterSpacing = 0.3.sp)
-                    val focusManager = LocalFocusManager.current
-                    val keyboardController = LocalSoftwareKeyboardController.current
                     OutlinedTextField(
                         value = password, onValueChange = { password = it },
                         placeholder = { Text("Password", fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
@@ -736,8 +753,7 @@ private fun DeleteAccountConfirmationDialog(onDismiss: () -> Unit, onConfirm: (S
                             }
                         },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus(force = true); keyboardController?.hide() }),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         isError = error != null, enabled = !isDeleting,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
@@ -749,14 +765,14 @@ private fun DeleteAccountConfirmationDialog(onDismiss: () -> Unit, onConfirm: (S
         },
         confirmButton = {
             Button(
-                onClick = { focusManager.clearFocus(force = true); keyboardController?.hide(); onConfirm(password) },
+                onClick = { onConfirm(password) },
                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed, contentColor = White),
                 shape = RoundedCornerShape(10.dp),
                 enabled = !isDeleting && password.isNotBlank()
             ) { Text(if (isDeleting) "Deleting..." else "Permanently Delete Account", fontFamily = InterFont, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = { focusManager.clearFocus(force = true); keyboardController?.hide(); onDismiss() }, enabled = !isDeleting) {
+            TextButton(onClick = { onDismiss() }, enabled = !isDeleting) {
                 Text("Cancel", fontFamily = InterFont, color = LogoBlue)
             }
         }

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,7 +96,13 @@ private fun isPasswordValid(password: String, isGenerated: Boolean = false): Pai
 
 private fun generateUsernameSuggestions(base: String): List<String> {
     val clean = base.trimStart('@').take(10)
-    return listOf("${clean}2", "${clean}10", "${clean}_1", "${clean}${clean.last()}", "${clean}_").distinct().take(4)
+    return if (clean.isBlank()) {
+        listOf("parent2", "parent10", "parent_1", "guardian_1")
+    } else {
+        listOf("${clean}2", "${clean}10", "${clean}_1", "${clean}${clean.last()}", "${clean}_")
+            .distinct()
+            .take(4)
+    }
 }
 
 @Composable
@@ -113,69 +120,133 @@ fun SignupScreen(
 ) {
     val context = LocalContext.current
 
-    var firstName       by remember { mutableStateOf("") }
-    var preferredName   by remember { mutableStateOf("") }
-    var lastName        by remember { mutableStateOf("") }
-    var ukPhoneDigits   by remember { mutableStateOf("") }
-    var email           by remember { mutableStateOf("") }
-    var usernameCore    by remember { mutableStateOf("") }
-    var password        by remember { mutableStateOf(TextFieldValue("")) }
+    var firstName by remember { mutableStateOf("") }
+    var preferredName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var ukPhoneDigits by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var usernameCore by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf(TextFieldValue("")) }
     var confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
 
-    var useGeneratedPassword   by remember { mutableStateOf(true) }
-    var generatedPassword      by remember { mutableStateOf(PasswordGenerator.generatePassword()) }
-    var passwordVisible        by remember { mutableStateOf(false) }
+    var useGeneratedPassword by remember { mutableStateOf(true) }
+    var generatedPassword by remember { mutableStateOf(PasswordGenerator.generatePassword()) }
+    var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var submitAttempted        by remember { mutableStateOf(false) }
+    var submitAttempted by remember { mutableStateOf(false) }
 
-    var firstNameError       by remember { mutableStateOf("") }
-    var lastNameError        by remember { mutableStateOf("") }
-    var phoneError           by remember { mutableStateOf("") }
-    var emailError           by remember { mutableStateOf("") }
-    var usernameError        by remember { mutableStateOf("") }
-    var passwordError        by remember { mutableStateOf("") }
+    var firstNameError by remember { mutableStateOf("") }
+    var lastNameError by remember { mutableStateOf("") }
+    var phoneError by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
+    var usernameError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
     var confirmPasswordError by remember { mutableStateOf("") }
+    var declarationError by remember { mutableStateOf("") }
 
-    var generalError             by remember { mutableStateOf("") }
+    var isAdultConfirmed by remember { mutableStateOf(false) }
+
+    var generalError by remember { mutableStateOf("") }
     var showAccountCreatedDialog by remember { mutableStateOf(false) }
-    var usernameSuggestions      by remember { mutableStateOf<List<String>>(emptyList()) }
+    var usernameSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     val allFieldsFilled =
-        firstName.isNotBlank() && lastName.isNotBlank() && ukPhoneDigits.length in 9..10 &&
-                email.isNotBlank() && usernameCore.isNotBlank() &&
+        firstName.isNotBlank() &&
+                lastName.isNotBlank() &&
+                ukPhoneDigits.length in 9..10 &&
+                email.isNotBlank() &&
+                usernameCore.isNotBlank() &&
                 (if (useGeneratedPassword) generatedPassword.isNotBlank() else password.text.isNotBlank()) &&
-                confirmPassword.text.isNotBlank()
+                confirmPassword.text.isNotBlank() &&
+                isAdultConfirmed
 
     fun validateAll(): Boolean {
-        firstNameError = ""; lastNameError = ""; phoneError = ""
-        emailError = ""; usernameError = ""; passwordError = ""; confirmPasswordError = ""
+        firstNameError = ""
+        lastNameError = ""
+        phoneError = ""
+        emailError = ""
+        usernameError = ""
+        passwordError = ""
+        confirmPasswordError = ""
+        declarationError = ""
+
         var ok = true
-        if (firstName.isBlank()) { firstNameError = "Required"; ok = false }
-        if (lastName.isBlank())  { lastNameError  = "Required"; ok = false }
-        if (ukPhoneDigits.length !in 9..10) { phoneError = "Must be 9 or 10 digits"; ok = false }
+
+        if (firstName.isBlank()) {
+            firstNameError = "Required"
+            ok = false
+        }
+        if (lastName.isBlank()) {
+            lastNameError = "Required"
+            ok = false
+        }
+        if (ukPhoneDigits.length !in 9..10) {
+            phoneError = "Must be 9 or 10 digits"
+            ok = false
+        }
+
         val emailTrimmed = email.trim()
         val (emailValid, emailMsg) = isEmailValid(emailTrimmed)
-        if (!emailValid) { emailError = emailMsg; ok = false }
+        if (!emailValid) {
+            emailError = emailMsg
+            ok = false
+        }
+
         val (usernameValid, usernameMsg) = isUsernameValid(usernameCore)
-        if (!usernameValid) { usernameError = usernameMsg; ok = false }
+        if (!usernameValid) {
+            usernameError = usernameMsg
+            ok = false
+        }
+
         val passwordToValidate = if (useGeneratedPassword) generatedPassword else password.text
         val (passwordValid, passwordMsg) = isPasswordValid(passwordToValidate, useGeneratedPassword)
-        if (!passwordValid) { passwordError = passwordMsg; ok = false }
-        if (confirmPassword.text.isBlank()) { confirmPasswordError = "Required"; ok = false }
-        else if (confirmPassword.text != passwordToValidate) { confirmPasswordError = "Passwords don't match"; ok = false }
+        if (!passwordValid) {
+            passwordError = passwordMsg
+            ok = false
+        }
+
+        if (confirmPassword.text.isBlank()) {
+            confirmPasswordError = "Required"
+            ok = false
+        } else if (confirmPassword.text != passwordToValidate) {
+            confirmPasswordError = "Passwords don't match"
+            ok = false
+        }
+
+        if (!isAdultConfirmed) {
+            declarationError = "Please confirm that you are over 18 and responsible for the child."
+            ok = false
+        }
+
         return ok
     }
 
     fun clearAllFields() {
-        firstName = ""; preferredName = ""; lastName = ""; ukPhoneDigits = ""
-        email = ""; usernameCore = ""
-        password = TextFieldValue(""); confirmPassword = TextFieldValue("")
-        useGeneratedPassword = true; generatedPassword = PasswordGenerator.generatePassword()
-        passwordVisible = false; confirmPasswordVisible = false; submitAttempted = false
-        firstNameError = ""; lastNameError = ""; phoneError = ""; emailError = ""
-        usernameError = ""; passwordError = ""; confirmPasswordError = ""
+        firstName = ""
+        preferredName = ""
+        lastName = ""
+        ukPhoneDigits = ""
+        email = ""
+        usernameCore = ""
+        password = TextFieldValue("")
+        confirmPassword = TextFieldValue("")
+        useGeneratedPassword = true
+        generatedPassword = PasswordGenerator.generatePassword()
+        passwordVisible = false
+        confirmPasswordVisible = false
+        submitAttempted = false
+        isAdultConfirmed = false
+
+        firstNameError = ""
+        lastNameError = ""
+        phoneError = ""
+        emailError = ""
+        usernameError = ""
+        passwordError = ""
+        confirmPasswordError = ""
+        declarationError = ""
         usernameSuggestions = emptyList()
     }
 
@@ -183,34 +254,76 @@ fun SignupScreen(
         val lower = msg.lowercase()
         when {
             lower.contains("email") && lower.contains("username") && lower.contains("phone") -> {
-                emailError = "Email already registered"; usernameError = "Username already taken"; phoneError = "Phone number already registered"
+                emailError = "Email already registered"
+                usernameError = "Username already taken"
+                phoneError = "Phone number already registered"
                 usernameSuggestions = generateUsernameSuggestions(usernameCore)
             }
             lower.contains("email") && lower.contains("username") -> {
-                emailError = "Email already registered"; usernameError = "Username already taken"
+                emailError = "Email already registered"
+                usernameError = "Username already taken"
                 usernameSuggestions = generateUsernameSuggestions(usernameCore)
             }
             lower.contains("email") && lower.contains("phone") -> {
-                emailError = "Email already registered"; phoneError = "Phone number already registered"
+                emailError = "Email already registered"
+                phoneError = "Phone number already registered"
             }
             lower.contains("username") && lower.contains("phone") -> {
-                usernameError = "Username already taken"; phoneError = "Phone number already registered"
+                usernameError = "Username already taken"
+                phoneError = "Phone number already registered"
                 usernameSuggestions = generateUsernameSuggestions(usernameCore)
             }
-            lower.contains("email") -> { emailError = "Email already registered" }
-            lower.contains("username") -> { usernameError = "Username already taken"; usernameSuggestions = generateUsernameSuggestions(usernameCore) }
-            lower.contains("phone") -> { phoneError = "Phone number already registered" }
-            else -> { generalError = msg; scope.launch { delay(4000); generalError = "" } }
+            lower.contains("email") -> {
+                emailError = "Email already registered"
+            }
+            lower.contains("username") -> {
+                usernameError = "Username already taken"
+                usernameSuggestions = generateUsernameSuggestions(usernameCore)
+            }
+            lower.contains("phone") -> {
+                phoneError = "Phone number already registered"
+            }
+            else -> {
+                generalError = msg
+                scope.launch {
+                    delay(4000)
+                    generalError = ""
+                }
+            }
         }
     }
 
     if (showAccountCreatedDialog) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Account Created", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LogoBlue) },
-            text = { Text("Your account has been successfully created.", fontSize = 14.sp, color = Color(0xFF374151)) },
+            title = {
+                Text(
+                    "Account Created",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = LogoBlue
+                )
+            },
+            text = {
+                Text(
+                    "Your account has been successfully created.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF374151)
+                )
+            },
             confirmButton = {
-                Button(onClick = { showAccountCreatedDialog = false; navigateToLogin() }, shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(backgroundColor = BrightBlue, contentColor = White), elevation = ButtonDefaults.elevation(0.dp, 0.dp)) {
+                Button(
+                    onClick = {
+                        showAccountCreatedDialog = false
+                        navigateToLogin()
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = BrightBlue,
+                        contentColor = White
+                    ),
+                    elevation = ButtonDefaults.elevation(0.dp, 0.dp)
+                ) {
                     Text("OK", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             },
@@ -221,9 +334,19 @@ fun SignupScreen(
 
     Scaffold(backgroundColor = Color.Transparent) { padding ->
         GradientBackground {
-            Column(modifier = modifier.fillMaxSize().padding(padding).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .imePadding(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Column(
-                    modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState).padding(horizontal = 24.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -254,53 +377,158 @@ fun SignupScreen(
                     )
                     if (submitAttempted && lastNameError.isNotEmpty()) CompactErrorText(lastNameError)
 
-                    UkPhoneField(digits = ukPhoneDigits, onDigitsChange = { ukPhoneDigits = it }, showError = submitAttempted, errorText = phoneError)
+                    UkPhoneField(
+                        digits = ukPhoneDigits,
+                        onDigitsChange = { ukPhoneDigits = it },
+                        showError = submitAttempted,
+                        errorText = phoneError
+                    )
 
-                    PillOutlinedField(value = email, onValueChange = { email = it.lowercase() }, placeholder = requiredLabel("Email"), keyboardType = KeyboardType.Email, maxLength = 254, isError = submitAttempted && emailError.isNotEmpty())
+                    PillOutlinedField(
+                        value = email,
+                        onValueChange = { email = it.lowercase() },
+                        placeholder = requiredLabel("Email"),
+                        keyboardType = KeyboardType.Email,
+                        maxLength = 254,
+                        isError = submitAttempted && emailError.isNotEmpty()
+                    )
                     if (submitAttempted && emailError.isNotEmpty()) CompactErrorText(emailError)
 
-                    UsernameAtField(usernameCore = usernameCore, onUsernameCoreChange = { usernameCore = it; usernameSuggestions = emptyList(); usernameError = "" }, showError = submitAttempted, errorText = usernameError)
+                    UsernameAtField(
+                        usernameCore = usernameCore,
+                        onUsernameCoreChange = {
+                            usernameCore = it
+                            usernameSuggestions = emptyList()
+                            usernameError = ""
+                        },
+                        showError = submitAttempted,
+                        errorText = usernameError
+                    )
 
                     if (usernameSuggestions.isNotEmpty()) {
-                        UsernameSuggestionsRow(suggestions = usernameSuggestions, onSuggestionClick = { suggestion -> usernameCore = suggestion; usernameError = ""; usernameSuggestions = emptyList() })
+                        UsernameSuggestionsRow(
+                            suggestions = usernameSuggestions,
+                            onSuggestionClick = { suggestion ->
+                                usernameCore = suggestion
+                                usernameError = ""
+                                usernameSuggestions = emptyList()
+                            }
+                        )
                     }
 
                     if (useGeneratedPassword) {
-                        GeneratedPasswordDisplay(password = generatedPassword, onRegenerate = { generatedPassword = PasswordGenerator.generatePassword() })
+                        GeneratedPasswordDisplay(
+                            password = generatedPassword,
+                            onRegenerate = { generatedPassword = PasswordGenerator.generatePassword() }
+                        )
                         if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
-                        TextButton(onClick = { useGeneratedPassword = false; password = TextFieldValue("") }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 2.dp)) {
+
+                        TextButton(
+                            onClick = {
+                                useGeneratedPassword = false
+                                password = TextFieldValue("")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 2.dp)
+                        ) {
                             Text("Use custom password instead", fontSize = 12.sp, color = LogoBlue)
                         }
                     } else {
-                        NoCopyPastePasswordField(value = password, onValueChange = { new -> if (new.text == password.text) password = new else password = new.copy(text = new.text) }, placeholder = requiredLabel("Password"), passwordVisible = passwordVisible, onTogglePassword = { passwordVisible = !passwordVisible })
+                        NoCopyPastePasswordField(
+                            value = password,
+                            onValueChange = { new ->
+                                if (new.text == password.text) password = new else password = new.copy(text = new.text)
+                            },
+                            placeholder = requiredLabel("Password"),
+                            passwordVisible = passwordVisible,
+                            onTogglePassword = { passwordVisible = !passwordVisible }
+                        )
                         if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
-                        TextButton(onClick = { useGeneratedPassword = true; generatedPassword = PasswordGenerator.generatePassword() }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 2.dp)) {
+
+                        TextButton(
+                            onClick = {
+                                useGeneratedPassword = true
+                                generatedPassword = PasswordGenerator.generatePassword()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 2.dp)
+                        ) {
                             Text("Use generated password instead", fontSize = 12.sp, color = LogoBlue)
                         }
                     }
 
-                    NoCopyPastePasswordField(value = confirmPassword, onValueChange = { new -> if (new.text == confirmPassword.text) confirmPassword = new else confirmPassword = new.copy(text = new.text) }, placeholder = requiredLabel("Confirm Password"), passwordVisible = confirmPasswordVisible, onTogglePassword = { confirmPasswordVisible = !confirmPasswordVisible })
+                    NoCopyPastePasswordField(
+                        value = confirmPassword,
+                        onValueChange = { new ->
+                            if (new.text == confirmPassword.text) confirmPassword = new else confirmPassword = new.copy(text = new.text)
+                        },
+                        placeholder = requiredLabel("Confirm Password"),
+                        passwordVisible = confirmPasswordVisible,
+                        onTogglePassword = { confirmPasswordVisible = !confirmPasswordVisible }
+                    )
                     if (submitAttempted && confirmPasswordError.isNotEmpty()) CompactErrorText(confirmPasswordError)
 
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    DeclarationCheckboxCard(
+                        checked = isAdultConfirmed,
+                        onCheckedChange = {
+                            isAdultConfirmed = it
+                            if (it) declarationError = ""
+                        }
+                    )
+                    if (submitAttempted && declarationError.isNotEmpty()) CompactErrorText(declarationError)
+
                     Text(
-                        text = buildAnnotatedString { withStyle(SpanStyle(color = RequiredRed, fontWeight = FontWeight.Bold)) { append("* Required") } },
+                        text = buildAnnotatedString {
+                            withStyle(
+                                SpanStyle(
+                                    color = RequiredRed,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) { append("* Required") }
+                        },
                         style = MaterialTheme.typography.caption.copy(fontSize = 10.sp),
-                        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp, bottom = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 4.dp, top = 4.dp, bottom = 8.dp)
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    AnimatedVisibility(visible = generalError.isNotEmpty(), enter = fadeIn(), exit = fadeOut(), modifier = Modifier.fillMaxWidth()) {
-                        Text(generalError.uppercase(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp), textAlign = TextAlign.Center)
+                    AnimatedVisibility(
+                        visible = generalError.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            generalError.uppercase(),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            textAlign = TextAlign.Center
+                        )
                     }
 
                     Button(
                         enabled = allFieldsFilled,
                         onClick = {
-                            generalError = ""; emailError = ""; usernameError = ""; phoneError = ""
-                            usernameSuggestions = emptyList(); submitAttempted = true
+                            generalError = ""
+                            emailError = ""
+                            usernameError = ""
+                            phoneError = ""
+                            declarationError = ""
+                            usernameSuggestions = emptyList()
+                            submitAttempted = true
+
                             if (!validateAll()) return@Button
+
                             val finalPassword = if (useGeneratedPassword) generatedPassword else password.text
+
                             viewModel.signupUser(
                                 context = context,
                                 firstName = toSentenceCase(firstName),
@@ -311,19 +539,41 @@ fun SignupScreen(
                                 password = finalPassword,
                                 preferredName = if (preferredName.isBlank()) "" else toSentenceCase(preferredName)
                             ) { success, msg ->
-                                if (success) { clearAllFields(); showAccountCreatedDialog = true }
-                                else handleServerError(msg)
+                                if (success) {
+                                    clearAllFields()
+                                    showAccountCreatedDialog = true
+                                } else {
+                                    handleServerError(msg)
+                                }
                             }
                         },
-                        modifier = Modifier.width(160.dp).height(42.dp),
+                        modifier = Modifier
+                            .width(160.dp)
+                            .height(42.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = BrightBlue, contentColor = White, disabledBackgroundColor = BrightBlue.copy(alpha = 0.45f), disabledContentColor = White.copy(alpha = 0.9f)),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = BrightBlue,
+                            contentColor = White,
+                            disabledBackgroundColor = BrightBlue.copy(alpha = 0.45f),
+                            disabledContentColor = White.copy(alpha = 0.9f)
+                        ),
                         elevation = ButtonDefaults.elevation(0.dp, 0.dp)
-                    ) { Text("Sign up", fontSize = 14.sp) }
+                    ) {
+                        Text("Sign up", fontSize = 14.sp)
+                    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     GlowingLoginLink(text = "Already have an account? Login", onClick = navigateToLogin)
-                    Text("SmartVoice", style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-2.5).sp, fontSize = 20.sp), color = LogoBlue, modifier = Modifier.padding(top = 6.dp, bottom = 24.dp))
+                    Text(
+                        "SmartVoice",
+                        style = MaterialTheme.typography.h4.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-2.5).sp,
+                            fontSize = 20.sp
+                        ),
+                        color = LogoBlue,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
+                    )
                 }
             }
         }
@@ -331,37 +581,144 @@ fun SignupScreen(
 }
 
 @Composable
-private fun NoCopyPastePasswordField(value: TextFieldValue, onValueChange: (TextFieldValue) -> Unit, placeholder: androidx.compose.ui.text.AnnotatedString, passwordVisible: Boolean = false, onTogglePassword: () -> Unit) {
+private fun DeclarationCheckboxCard(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.size(20.dp),
+            colors = CheckboxDefaults.colors(
+                checkedColor = BrightBlue,
+                uncheckedColor = Color(0xFF6B7280),
+                checkmarkColor = White
+            )
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = buildAnnotatedString {
+                withStyle(
+                    SpanStyle(
+                        color = RequiredRed,
+                        fontWeight = FontWeight.Bold
+                    )
+                ) {
+                    append("* ")
+                }
+                append("I confirm I am over 18 ")
+                append("and responsible for any children.")
+            },
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
+            color = Color(0xFF6B7280),
+            modifier = Modifier
+                .weight(1f)
+                .padding(top = 3.dp)
+                .clickable { onCheckedChange(!checked) }
+        )
+    }
+}
+
+@Composable
+private fun NoCopyPastePasswordField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    placeholder: androidx.compose.ui.text.AnnotatedString,
+    passwordVisible: Boolean = false,
+    onTogglePassword: () -> Unit
+) {
     val shape = RoundedCornerShape(14.dp)
     val inputTextStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
     val placeholderColor = Color(0xFF6B7280)
+
     OutlinedTextField(
         value = value,
-        onValueChange = { new -> if (new.text.length <= 128) onValueChange(new.copy(text = new.text, selection = new.selection, composition = null)) },
+        onValueChange = { new ->
+            if (new.text.length <= 128) {
+                onValueChange(new.copy(text = new.text, selection = new.selection, composition = null))
+            }
+        },
         singleLine = true,
-        placeholder = { Text(placeholder, color = placeholderColor, fontSize = 13.sp, fontWeight = FontWeight.Normal, maxLines = 1) },
+        placeholder = {
+            Text(
+                placeholder,
+                color = placeholderColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1
+            )
+        },
         textStyle = inputTextStyle,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             IconButton(onClick = onTogglePassword, modifier = Modifier.size(40.dp)) {
-                Icon(imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null, tint = Color(0xFF374151), modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                    contentDescription = null,
+                    tint = Color(0xFF374151),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         },
-        modifier = Modifier.fillMaxWidth().height(52.dp), shape = shape,
-        colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = PillGrey, textColor = inputTextStyle.color, cursorColor = LogoBlue, focusedBorderColor = BrightBlue, unfocusedBorderColor = Color.Transparent, disabledBorderColor = Color.Transparent, placeholderColor = placeholderColor)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = shape,
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            backgroundColor = PillGrey,
+            textColor = inputTextStyle.color,
+            cursorColor = LogoBlue,
+            focusedBorderColor = BrightBlue,
+            unfocusedBorderColor = Color.Transparent,
+            disabledBorderColor = Color.Transparent,
+            placeholderColor = placeholderColor
+        )
     )
 }
 
 @Composable
-private fun UsernameSuggestionsRow(suggestions: List<String>, onSuggestionClick: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)) {
-        Text("Try one of these:", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6B7280), modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+private fun UsernameSuggestionsRow(
+    suggestions: List<String>,
+    onSuggestionClick: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 2.dp)
+    ) {
+        Text(
+            "Try one of these:",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF6B7280),
+            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             suggestions.forEach { suggestion ->
-                Surface(shape = RoundedCornerShape(20.dp), color = BrightBlue.copy(alpha = 0.1f)) {
-                    TextButton(onClick = { onSuggestionClick(suggestion) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), colors = ButtonDefaults.textButtonColors(contentColor = BrightBlue)) {
-                        Text("@$suggestion", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = BrightBlue.copy(alpha = 0.1f)
+                ) {
+                    TextButton(
+                        onClick = { onSuggestionClick(suggestion) },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = BrightBlue)
+                    ) {
+                        Text("@$suggestion", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -371,11 +728,33 @@ private fun UsernameSuggestionsRow(suggestions: List<String>, onSuggestionClick:
 
 @Composable
 private fun GeneratedPasswordDisplay(password: String, onRegenerate: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(password, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF111827), modifier = Modifier.weight(1f).padding(end = 8.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = PillGrey, shape = RoundedCornerShape(14.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                password,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color(0xFF111827),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            )
             IconButton(onClick = onRegenerate, modifier = Modifier.size(36.dp)) {
-                Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Generate new password", tint = LogoBlue, modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = "Generate new password",
+                    tint = LogoBlue,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -397,74 +776,196 @@ private fun PillOutlinedField(
     val shape = RoundedCornerShape(14.dp)
     val inputTextStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
     val placeholderColor = Color(0xFF6B7280)
+
     OutlinedTextField(
         value = value,
         onValueChange = { newValue ->
+            val filtered = if (allowOnlyLetters) {
+                newValue.filter { it.isLetter() || it == ' ' || it == '\'' || it == '-' }
+            } else {
+                newValue
+            }
 
-            val filtered = if (allowOnlyLetters) newValue.filter { it.isLetter() || it == ' ' || it == '\'' || it == '-' } else newValue
             if (filtered.length <= maxLength) onValueChange(filtered)
         },
-        singleLine = true, isError = isError,
-        placeholder = { Text(placeholder, color = placeholderColor, fontSize = 13.sp, fontWeight = FontWeight.Normal, maxLines = 1) },
+        singleLine = true,
+        isError = isError,
+        placeholder = {
+            Text(
+                placeholder,
+                color = placeholderColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1
+            )
+        },
         textStyle = inputTextStyle,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
         trailingIcon = {
             if (isPassword) {
                 IconButton(onClick = { onTogglePassword?.invoke() }, modifier = Modifier.size(40.dp)) {
-                    Icon(imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null, tint = Color(0xFF374151), modifier = Modifier.size(20.dp))
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = null,
+                        tint = Color(0xFF374151),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         },
-        modifier = Modifier.fillMaxWidth().height(52.dp), shape = shape,
-        colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = PillGrey, textColor = inputTextStyle.color, cursorColor = LogoBlue, focusedBorderColor = if (isError) MaterialTheme.colors.error else BrightBlue, unfocusedBorderColor = if (isError) MaterialTheme.colors.error else Color.Transparent, disabledBorderColor = Color.Transparent, placeholderColor = placeholderColor)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = shape,
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            backgroundColor = PillGrey,
+            textColor = inputTextStyle.color,
+            cursorColor = LogoBlue,
+            focusedBorderColor = if (isError) MaterialTheme.colors.error else BrightBlue,
+            unfocusedBorderColor = if (isError) MaterialTheme.colors.error else Color.Transparent,
+            disabledBorderColor = Color.Transparent,
+            placeholderColor = placeholderColor
+        )
     )
 }
 
 @Composable
-private fun UsernameAtField(usernameCore: String, onUsernameCoreChange: (String) -> Unit, showError: Boolean, errorText: String) {
+private fun UsernameAtField(
+    usernameCore: String,
+    onUsernameCoreChange: (String) -> Unit,
+    showError: Boolean,
+    errorText: String
+) {
     val shape = RoundedCornerShape(14.dp)
     val inputTextStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
     val placeholderColor = Color(0xFF6B7280)
+
     OutlinedTextField(
         value = usernameCore,
-        onValueChange = { raw -> onUsernameCoreChange(raw.filter { it.isLetterOrDigit() || it == '.' || it == '_' }.take(12)) },
-        singleLine = true, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Ascii),
-        textStyle = inputTextStyle, modifier = Modifier.fillMaxWidth().height(52.dp), shape = shape,
+        onValueChange = { raw ->
+            onUsernameCoreChange(raw.filter { it.isLetterOrDigit() || it == '.' || it == '_' }.take(12))
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Ascii),
+        textStyle = inputTextStyle,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = shape,
         isError = showError && errorText.isNotEmpty(),
-        leadingIcon = { Text("@", color = Color(0xFF111827), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp)) },
-        placeholder = { Text(buildAnnotatedString { withStyle(SpanStyle(color = RequiredRed, fontWeight = FontWeight.Bold)) { append("* ") }; append("Username") }, color = placeholderColor, fontSize = 13.sp, fontWeight = FontWeight.Normal, maxLines = 1) },
-        colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = PillGrey, textColor = inputTextStyle.color, cursorColor = BrightBlue, focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue, unfocusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else Color.Transparent, disabledBorderColor = Color.Transparent, placeholderColor = placeholderColor)
+        leadingIcon = {
+            Text(
+                "@",
+                color = Color(0xFF111827),
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        },
+        placeholder = {
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = RequiredRed, fontWeight = FontWeight.Bold)) { append("* ") }
+                    append("Username")
+                },
+                color = placeholderColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1
+            )
+        },
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            backgroundColor = PillGrey,
+            textColor = inputTextStyle.color,
+            cursorColor = BrightBlue,
+            focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue,
+            unfocusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else Color.Transparent,
+            disabledBorderColor = Color.Transparent,
+            placeholderColor = placeholderColor
+        )
     )
+
     if (showError && errorText.isNotEmpty()) CompactErrorText(errorText)
 }
 
 @Composable
-private fun UkPhoneField(digits: String, onDigitsChange: (String) -> Unit, showError: Boolean, errorText: String) {
+private fun UkPhoneField(
+    digits: String,
+    onDigitsChange: (String) -> Unit,
+    showError: Boolean,
+    errorText: String
+) {
     val shape = RoundedCornerShape(14.dp)
     val inputTextStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF111827))
     val placeholderColor = Color(0xFF6B7280)
+
     OutlinedTextField(
         value = digits,
         onValueChange = { raw -> onDigitsChange(raw.filter { it.isDigit() }.take(10)) },
-        singleLine = true, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        textStyle = inputTextStyle, modifier = Modifier.fillMaxWidth().height(52.dp), shape = shape,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+        textStyle = inputTextStyle,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = shape,
         isError = showError && errorText.isNotEmpty(),
-        leadingIcon = { Text("+44", color = Color(0xFF111827), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(start = 16.dp)) },
-        placeholder = { Text(buildAnnotatedString { withStyle(SpanStyle(color = RequiredRed, fontWeight = FontWeight.Bold)) { append("* ") }; append("Mobile Number") }, color = placeholderColor, fontSize = 13.sp, fontWeight = FontWeight.Normal, maxLines = 1) },
-        colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = PillGrey, textColor = inputTextStyle.color, cursorColor = BrightBlue, focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue, unfocusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else Color.Transparent, disabledBorderColor = Color.Transparent, placeholderColor = placeholderColor)
+        leadingIcon = {
+            Text(
+                "+44",
+                color = Color(0xFF111827),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        },
+        placeholder = {
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = RequiredRed, fontWeight = FontWeight.Bold)) { append("* ") }
+                    append("Mobile Number")
+                },
+                color = placeholderColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1
+            )
+        },
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            backgroundColor = PillGrey,
+            textColor = inputTextStyle.color,
+            cursorColor = BrightBlue,
+            focusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else BrightBlue,
+            unfocusedBorderColor = if (showError && errorText.isNotEmpty()) MaterialTheme.colors.error else Color.Transparent,
+            disabledBorderColor = Color.Transparent,
+            placeholderColor = placeholderColor
+        )
     )
+
     if (showError && errorText.isNotEmpty()) CompactErrorText(errorText)
 }
 
 @Composable
 private fun CompactErrorText(text: String) {
-    Text(text = text, color = MaterialTheme.colors.error, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 2.dp, bottom = 2.dp))
+    Text(
+        text = text,
+        color = MaterialTheme.colors.error,
+        fontSize = 9.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
+    )
 }
 
 @Composable
 private fun GlowingLoginLink(text: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick, colors = ButtonDefaults.textButtonColors(contentColor = BrightBlue), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = BrightBlue),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+    ) {
         Text(text, fontSize = 13.sp)
     }
 }
