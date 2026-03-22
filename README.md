@@ -11,13 +11,13 @@ The server is a Python FastAPI app run with Uvicorn.
 
 ### Prerequisites
 - Python 3.10
-- The `AT2_SERVER` project folder
+- The `SERVER` project folder (unzipped)
 
 ### Steps
 
 ```bash
 # 1. Navigate to the server directory
-cd path/to/AT2_SERVER
+cd path/to/SERVER
 
 # 2. (Windows only) Allow script execution for this session
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -50,7 +50,7 @@ python -m uvicorn server:app --host 0.0.0.0 --port 8000
 - JDK 17 / JetBrains Runtime 17
 
 ### Android Studio Version
-Use the version documented in the original setup guide — check the project repo's `docs/` folder for the screenshot reference.
+Use the version documented in the original setup guide, check the project repo's `docs/` folder for the screenshot reference.
 
 ### Build Configuration
 
