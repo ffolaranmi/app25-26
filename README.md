@@ -50,8 +50,7 @@ python -m uvicorn server:app --host 0.0.0.0 --port 8000
 - JDK 17 / JetBrains Runtime 17
 
 ### Android Studio Version
-Use the version documented in the original setup guide, check the project repo's `docs/` folder for the screenshot reference.
-
+Use the version documented in the original setup guide: How to set up the Smart Voice app.
 ### Build Configuration
 
 In `build.gradle` (app level), ensure the following:
