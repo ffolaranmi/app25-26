@@ -669,7 +669,7 @@ private fun DeclarationCheckboxCard(
                     append("* ")
                 }
                 append("I confirm I am over 18 ")
-                append("and responsible for any children.")
+                append("and responsible for any children associated with my account.")
             },
             fontSize = 11.sp,
             lineHeight = 13.sp,
