@@ -173,29 +173,64 @@ fun ResultsScreen(
     }
 
     showResultDialog?.let { result ->
-        val pct = (result.probability * 100).toInt()
         val isHighRisk = result.pathology
         val badgeColor = if (isHighRisk) ErrorRed else Color(0xFF2E7D32)
         val riskLabel = if (isHighRisk) "High Risk" else "Low Risk"
-        val description = if (isHighRisk) "The voice sample shows signs consistent with pathology. We recommend consulting a medical professional for further assessment." else "The voice sample does not show significant signs of pathology. Continue monitoring as advised."
+        val description = if (isHighRisk) {
+            "The voice sample shows signs consistent with pathology. We recommend consulting a medical professional for further assessment."
+        } else {
+            "The voice sample does not show significant signs of pathology. Continue monitoring as advised."
+        }
         AlertDialog(
             onDismissRequest = { selectedDiagnosisId?.let { viewModel.markAsViewed(it) }; showResultDialog = null; selectedDiagnosisId = null },
             shape = RoundedCornerShape(16.dp),
-            title = { Text("Analysis Result", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, color = LogoBlue) },
+            title = {
+                Text("Analysis Result", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, color = LogoBlue)
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.background(color = badgeColor.copy(alpha = 0.10f), shape = RoundedCornerShape(14.dp)).padding(horizontal = 24.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "$pct%", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp, color = badgeColor)
-                            Text(text = riskLabel, fontFamily = InterFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = badgeColor)
-                        }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(color = badgeColor.copy(alpha = 0.10f), shape = RoundedCornerShape(14.dp))
+                            .padding(horizontal = 24.dp, vertical = 14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = riskLabel,
+                            fontFamily = InterFont,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 32.sp,
+                            color = badgeColor
+                        )
                     }
-                    Text(text = description, fontFamily = InterFont, fontSize = 14.sp, color = TileTextColor, textAlign = TextAlign.Center, lineHeight = 20.sp)
-                    Text(text = "This is not a medical diagnosis. Always consult a qualified clinician.", fontFamily = InterFont, fontSize = 11.sp, color = PlaceholderColor, textAlign = TextAlign.Center, lineHeight = 16.sp)
+                    Text(
+                        text = description,
+                        fontFamily = InterFont,
+                        fontSize = 14.sp,
+                        color = TileTextColor,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+                    Text(
+                        text = "This is not a medical diagnosis. Always consult a qualified clinician.",
+                        fontFamily = InterFont,
+                        fontSize = 11.sp,
+                        color = PlaceholderColor,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
                 }
             },
             confirmButton = {
-                Button(onClick = { selectedDiagnosisId?.let { viewModel.markAsViewed(it) }; showResultDialog = null; selectedDiagnosisId = null }, colors = ButtonDefaults.buttonColors(containerColor = LogoBlue), shape = RoundedCornerShape(10.dp)) {
+                Button(
+                    onClick = { selectedDiagnosisId?.let { viewModel.markAsViewed(it) }; showResultDialog = null; selectedDiagnosisId = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = LogoBlue),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text("Close", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
                 }
             }
@@ -382,7 +417,7 @@ fun ResultsRecordingTile(
                     }
                     is DiagnosisResult.Error -> {
                         Box(modifier = Modifier.background(color = Color(0xFFB71C1C).copy(alpha = 0.08f), shape = RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 5.dp)) {
-                            Text(text = "⚠ Analysis failed", fontFamily = InterFont, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFB71C1C))
+                            Text(text = "Analysis failed", fontFamily = InterFont, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFB71C1C))
                         }
                         Button(
                             onClick = {
