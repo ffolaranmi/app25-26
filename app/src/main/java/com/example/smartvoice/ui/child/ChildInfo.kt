@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartvoice.R
@@ -46,6 +47,8 @@ import java.util.Calendar
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
 
 object ChildInfoDestination : NavigationDestination {
     override val route = "childInfo"
@@ -75,6 +78,7 @@ private val monthNames = listOf(
 )
 
 private const val OTHER_HOSPITAL_ID = "OTHER"
+private const val CUSTOM_HOSPITAL_PREFIX = "OTHER|"
 
 private val hospitalOptions = mapOf(
     "1001" to "Queen Elizabeth University Hospital, ENT",
@@ -116,16 +120,112 @@ private fun filterNameInput(input: String): String {
     }
 }
 
-private fun formatCustomHospitalValue(customHospital: String): String {
-    return "OTHER:${customHospital.trim()}"
+private fun normalisePhoneNumber(input: String): String {
+    val trimmed = input.trim()
+    return if (trimmed.startsWith("+")) {
+        "+" + trimmed.drop(1).filter { it.isDigit() }
+    } else {
+        trimmed.filter { it.isDigit() }
+    }
+}
+
+private fun isValidHospitalPhone(phone: String): Boolean {
+    val digits = phone.filter { it.isDigit() }
+    return digits.length == 11 && digits.startsWith("0")
+}
+
+private fun formatCustomHospitalValue(customHospital: String, customPhone: String): String {
+    return "$CUSTOM_HOSPITAL_PREFIX${customHospital.trim()}|${normalisePhoneNumber(customPhone)}"
 }
 
 private fun isCustomHospitalValue(hospitalId: String): Boolean {
-    return hospitalId.startsWith("OTHER:")
+    return hospitalId.startsWith(CUSTOM_HOSPITAL_PREFIX)
 }
 
 private fun extractCustomHospitalName(hospitalId: String): String {
-    return if (isCustomHospitalValue(hospitalId)) hospitalId.removePrefix("OTHER:") else ""
+    if (!isCustomHospitalValue(hospitalId)) return ""
+    val payload = hospitalId.removePrefix(CUSTOM_HOSPITAL_PREFIX)
+    return payload.substringBefore("|").trim()
+}
+
+private fun extractCustomHospitalPhone(hospitalId: String): String {
+    if (!isCustomHospitalValue(hospitalId)) return ""
+    val payload = hospitalId.removePrefix(CUSTOM_HOSPITAL_PREFIX)
+    return payload.substringAfter("|", "").trim()
+}
+
+private fun collectAddErrors(
+    firstName: String,
+    lastName: String,
+    gender: String?,
+    month: Int?,
+    birthYear: String,
+    hospital: String?,
+    customHospital: String,
+    customHospitalPhone: String
+): List<String> {
+    val errors = mutableListOf<String>()
+    val year = birthYear.toIntOrNull()
+    val phone = normalisePhoneNumber(customHospitalPhone)
+    val now = Calendar.getInstance()
+    val curYear = now.get(Calendar.YEAR)
+    val curMonth = now.get(Calendar.MONTH) + 1
+    val minAllowedYear = curYear - 17
+
+    if (firstName.trim().isBlank() || lastName.trim().isBlank()) errors.add("Please enter a first and last name.")
+    if (gender.isNullOrBlank()) errors.add("Please select a gender.")
+    if (month == null) errors.add("Please select a birth month.")
+    if (year == null || year < 1900) errors.add("Please enter a valid birth year.")
+    if (hospital.isNullOrBlank()) errors.add("Please select a hospital.")
+    if (hospital == OTHER_HOSPITAL_ID && customHospital.trim().isBlank()) errors.add("Please enter the hospital name.")
+    if (hospital == OTHER_HOSPITAL_ID && phone.isBlank()) errors.add("Please enter the hospital phone number.")
+    if (hospital == OTHER_HOSPITAL_ID && phone.isNotBlank() && !isValidHospitalPhone(phone)) errors.add("Phone number must start with 0 and be 11 digits.")
+
+    if (year != null && year >= 1900 && month != null) {
+        when {
+            year > curYear || (year == curYear && month > curMonth) -> errors.add("Birth month and year cannot be in the future.")
+            year < minAllowedYear -> errors.add("This app is for children 17 years and under.")
+            year == minAllowedYear && month < curMonth -> errors.add("This app is for children 17 years and under.")
+        }
+    }
+    return errors
+}
+
+private fun collectEditErrors(
+    firstName: String,
+    lastName: String,
+    gender: String?,
+    selectedMonth: Int,
+    birthYear: String,
+    hospital: String?,
+    customHospital: String,
+    customHospitalPhone: String
+): List<String> {
+    val errors = mutableListOf<String>()
+    val year = birthYear.toIntOrNull()
+    val phone = normalisePhoneNumber(customHospitalPhone)
+    val now = Calendar.getInstance()
+    val curYear = now.get(Calendar.YEAR)
+    val curMonth = now.get(Calendar.MONTH) + 1
+    val minAllowedYear = curYear - 17
+
+    if (firstName.trim().isBlank() || lastName.trim().isBlank()) errors.add("Please enter a first and last name.")
+    if (gender.isNullOrBlank()) errors.add("Please select a gender.")
+    if (selectedMonth !in 1..12) errors.add("Please select a birth month.")
+    if (year == null || year < 1900) errors.add("Please enter a valid birth year.")
+    if (hospital.isNullOrBlank()) errors.add("Please select a hospital.")
+    if (hospital == OTHER_HOSPITAL_ID && customHospital.trim().isBlank()) errors.add("Please enter the hospital name.")
+    if (hospital == OTHER_HOSPITAL_ID && phone.isBlank()) errors.add("Please enter the hospital phone number.")
+    if (hospital == OTHER_HOSPITAL_ID && phone.isNotBlank() && !isValidHospitalPhone(phone)) errors.add("Phone number must start with 0 and be 11 digits.")
+
+    if (year != null && year >= 1900) {
+        when {
+            year > curYear || (year == curYear && selectedMonth > curMonth) -> errors.add("Birth month and year cannot be in the future.")
+            year < minAllowedYear -> errors.add("This app is for children 17 years and under.")
+            year == minAllowedYear && selectedMonth < curMonth -> errors.add("This app is for children 17 years and under.")
+        }
+    }
+    return errors
 }
 
 @Composable
@@ -141,6 +241,7 @@ fun ChildInfoScreen(
 
     var showDeleteDialog by remember { mutableStateOf<ChildTable?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) { viewModel.loadChildren(userId) }
 
@@ -188,15 +289,23 @@ fun ChildInfoScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                SmartVoiceTopBar(title = "Child Info", onBack = navigateBack)
+                SmartVoiceTopBar(
+                    title = "Child Info",
+                    onBack = navigateBack,
+                    onHelp = { showTutorial = true }
+                )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (children.isEmpty()) {
                     Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Text(
                             text = "No children added yet.\nTap '+ Add Child' to get started.",
-                            fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 16.sp,
-                            color = PlaceholderColor, textAlign = TextAlign.Center, lineHeight = 24.sp
+                            fontFamily = InterFont,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp,
+                            color = PlaceholderColor,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 24.sp
                         )
                     }
                 } else {
@@ -229,6 +338,13 @@ fun ChildInfoScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
     }
 }
 
@@ -271,6 +387,7 @@ fun ChildDetailScreen(
     val viewModel: ChildViewModel = viewModel(factory = ChildViewModelFactory(database))
     val child by viewModel.selectedChild.collectAsState()
     var showManageDialog by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     LaunchedEffect(childId) { viewModel.loadChildById(childId) }
 
@@ -291,7 +408,11 @@ fun ChildDetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                SmartVoiceTopBar(title = child?.let { "${it.firstName} ${it.lastName}" } ?: "Child", onBack = navigateBack)
+                SmartVoiceTopBar(
+                    title = child?.let { "${it.firstName} ${it.lastName}" } ?: "Child",
+                    onBack = navigateBack,
+                    onHelp = { showTutorial = true }
+                )
                 Spacer(modifier = Modifier.height(20.dp))
 
                 child?.let { c ->
@@ -319,6 +440,13 @@ fun ChildDetailScreen(
             }
         }
     }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
+    }
 }
 
 @Composable
@@ -340,7 +468,7 @@ private fun InfoTileRow(label: String, value: String) {
 private fun HospitalInfoTile(label: String, hospitalId: String, context: android.content.Context) {
     val isCustomHospital = isCustomHospitalValue(hospitalId)
     val hospitalName = if (isCustomHospital) extractCustomHospitalName(hospitalId) else HospitalData.getHospitalName(hospitalId)
-    val hospitalPhone = if (isCustomHospital) "" else HospitalData.getHospitalPhone(hospitalId)
+    val hospitalPhone = if (isCustomHospital) extractCustomHospitalPhone(hospitalId) else HospitalData.getHospitalPhone(hospitalId)
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
@@ -354,7 +482,10 @@ private fun HospitalInfoTile(label: String, hospitalId: String, context: android
                 Text(hospitalName.ifEmpty { "—" }, fontFamily = InterFont, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = if (hospitalName.isNotEmpty()) TileTextColor else PlaceholderColor)
             }
             if (hospitalPhone.isNotEmpty()) {
-                IconButton(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$hospitalPhone"))) }, modifier = Modifier.size(40.dp)) {
+                IconButton(
+                    onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(hospitalPhone)}"))) },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(imageVector = Icons.Filled.Phone, contentDescription = "Call hospital", tint = BrightBlue, modifier = Modifier.size(24.dp))
                 }
             }
@@ -371,64 +502,158 @@ private fun AddChildDialog(accountHolderId: Long, onDismiss: () -> Unit, onConfi
     var birthYear by remember { mutableStateOf("") }
     var selectedHospital by remember { mutableStateOf<String?>(null) }
     var customHospital by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
+    var customHospitalPhone by remember { mutableStateOf("") }
+    var errors by remember { mutableStateOf<List<String>>(emptyList()) }
     var openDropdown by remember { mutableStateOf(OpenDropdown.NONE) }
 
-    AlertDialog(
+    val dialogScrollState = rememberScrollState()
+
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
-        properties = DialogProperties(dismissOnClickOutside = false, usePlatformDefaultWidth = false),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-        title = { Text("Add Child", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = LogoBlue) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) })
-                DialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) })
-                SimpleDropdownField(label = "Gender", options = genderOptions, selected = selectedGender, isExpanded = openDropdown == OpenDropdown.GENDER, onExpandChange = { openDropdown = if (it) OpenDropdown.GENDER else OpenDropdown.NONE }, onSelected = { selectedGender = it; openDropdown = OpenDropdown.NONE })
-                MonthDropdownField(selectedMonth = selectedMonth, isExpanded = openDropdown == OpenDropdown.MONTH, onExpandChange = { openDropdown = if (it) OpenDropdown.MONTH else OpenDropdown.NONE }, onMonthSelected = { selectedMonth = it; openDropdown = OpenDropdown.NONE }, label = "Birth Month")
-                DialogField(value = birthYear, label = "Birth Year", keyboardType = KeyboardType.Number, onValueChange = { birthYear = it.filter { ch -> ch.isDigit() }.take(4) })
-                HospitalDropdownField(selectedHospital = selectedHospital, isExpanded = openDropdown == OpenDropdown.HOSPITAL, onExpandChange = { openDropdown = if (it) OpenDropdown.HOSPITAL else OpenDropdown.NONE }, onHospitalSelected = { selectedHospital = it; openDropdown = OpenDropdown.NONE; if (it != OTHER_HOSPITAL_ID) customHospital = "" })
-                if (selectedHospital == OTHER_HOSPITAL_ID) {
-                    DialogField(value = customHospital, label = "Enter Hospital Name", onValueChange = { customHospital = it })
+        properties = DialogProperties(dismissOnClickOutside = false, usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+                Text(
+                    "Add Child",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = LogoBlue
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(dialogScrollState),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        DialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) })
+                        DialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) })
+                        SimpleDropdownField(
+                            label = "Gender",
+                            options = genderOptions,
+                            selected = selectedGender,
+                            isExpanded = openDropdown == OpenDropdown.GENDER,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.GENDER else OpenDropdown.NONE },
+                            onSelected = { selectedGender = it; openDropdown = OpenDropdown.NONE }
+                        )
+                        MonthDropdownField(
+                            selectedMonth = selectedMonth,
+                            isExpanded = openDropdown == OpenDropdown.MONTH,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.MONTH else OpenDropdown.NONE },
+                            onMonthSelected = { selectedMonth = it; openDropdown = OpenDropdown.NONE },
+                            label = "Birth Month"
+                        )
+                        DialogField(
+                            value = birthYear,
+                            label = "Birth Year",
+                            keyboardType = KeyboardType.Number,
+                            onValueChange = { birthYear = it.filter { ch -> ch.isDigit() }.take(4) }
+                        )
+                        HospitalDropdownField(
+                            selectedHospital = selectedHospital,
+                            isExpanded = openDropdown == OpenDropdown.HOSPITAL,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.HOSPITAL else OpenDropdown.NONE },
+                            onHospitalSelected = {
+                                selectedHospital = it
+                                openDropdown = OpenDropdown.NONE
+                                if (it != OTHER_HOSPITAL_ID) {
+                                    customHospital = ""
+                                    customHospitalPhone = ""
+                                }
+                            }
+                        )
+                        if (selectedHospital == OTHER_HOSPITAL_ID) {
+                            DialogField(value = customHospital, label = "Enter Hospital Name", onValueChange = { customHospital = it })
+                            DialogField(
+                                value = customHospitalPhone,
+                                label = "Enter Hospital Phone Number",
+                                keyboardType = KeyboardType.Phone,
+                                onValueChange = { customHospitalPhone = normalisePhoneNumber(it) }
+                            )
+                        }
+                    }
                 }
-                if (error.isNotEmpty()) Text(error, fontFamily = InterFont, fontSize = 12.sp, color = ErrorRed)
+
+                if (errors.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        errors.forEach { errorMsg ->
+                            Text(
+                                text = "• $errorMsg",
+                                fontFamily = InterFont,
+                                fontSize = 12.sp,
+                                color = ErrorRed
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val validationErrors = collectAddErrors(
+                                firstName, lastName, selectedGender, selectedMonth,
+                                birthYear, selectedHospital, customHospital, customHospitalPhone
+                            )
+                            if (validationErrors.isNotEmpty()) {
+                                errors = validationErrors
+                            } else {
+                                val year = birthYear.toIntOrNull()!!
+                                val month = selectedMonth!!
+                                val gender = selectedGender!!
+                                val hospital = selectedHospital!!
+                                val phone = normalisePhoneNumber(customHospitalPhone)
+                                val finalHospitalValue = if (hospital == OTHER_HOSPITAL_ID) {
+                                    formatCustomHospitalValue(customHospital, phone)
+                                } else {
+                                    hospital
+                                }
+                                onConfirm(
+                                    ChildTable(
+                                        userId = accountHolderId,
+                                        firstName = firstName.trim(),
+                                        lastName = lastName.trim(),
+                                        gender = gender,
+                                        birthMonth = month,
+                                        birthYear = year,
+                                        hospitalId = finalHospitalValue
+                                    )
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Add", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
+                    }
+                }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val year = birthYear.toIntOrNull()
-                    val month = selectedMonth
-                    val gender = selectedGender
-                    val hospital = selectedHospital
-                    val now = Calendar.getInstance()
-                    val curYear = now.get(Calendar.YEAR)
-                    val curMonth = now.get(Calendar.MONTH) + 1
-                    val minAllowedYear = curYear - 17
-                    val finalHospitalValue = when {
-                        hospital == OTHER_HOSPITAL_ID && customHospital.trim().isNotBlank() -> formatCustomHospitalValue(customHospital)
-                        hospital != null -> hospital
-                        else -> null
-                    }
-                    when {
-                        firstName.trim().isBlank() || lastName.trim().isBlank() -> error = "Please enter a first and last name."
-                        gender.isNullOrBlank() -> error = "Please select a gender."
-                        month == null -> error = "Please select a birth month."
-                        year == null || year < 1900 -> error = "Please enter a valid birth year."
-                        hospital.isNullOrBlank() -> error = "Please select a hospital."
-                        hospital == OTHER_HOSPITAL_ID && customHospital.trim().isBlank() -> error = "Please enter the hospital name."
-                        year > curYear || (year == curYear && month > curMonth) -> error = "Birth month and year cannot be in the future."
-                        year < minAllowedYear -> error = "This app is for children 17 years and under."
-                        year == minAllowedYear && month < curMonth -> error = "This app is for children 17 years and under."
-                        else -> onConfirm(ChildTable(userId = accountHolderId, firstName = firstName.trim(), lastName = lastName.trim(), gender = gender, birthMonth = month, birthYear = year, hospitalId = finalHospitalValue ?: ""))
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
-                shape = RoundedCornerShape(10.dp)
-            ) { Text("Add", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", fontFamily = InterFont, color = LogoBlue) } }
-    )
+        }
+    }
 }
 
 @Composable
@@ -439,77 +664,183 @@ private fun EditChildDialog(child: ChildTable, onDismiss: () -> Unit, onConfirm:
     var selectedMonth by remember { mutableStateOf(child.birthMonth) }
     var birthYear by remember { mutableStateOf(child.birthYear.toString()) }
     var selectedHospital by remember {
-        mutableStateOf(when { isCustomHospitalValue(child.hospitalId) -> OTHER_HOSPITAL_ID; child.hospitalId.isNotBlank() -> child.hospitalId; else -> null })
+        mutableStateOf(
+            when {
+                isCustomHospitalValue(child.hospitalId) -> OTHER_HOSPITAL_ID
+                child.hospitalId.isNotBlank() -> child.hospitalId
+                else -> null
+            }
+        )
     }
     var customHospital by remember { mutableStateOf(if (isCustomHospitalValue(child.hospitalId)) extractCustomHospitalName(child.hospitalId) else "") }
-    var error by remember { mutableStateOf("") }
+    var customHospitalPhone by remember { mutableStateOf(if (isCustomHospitalValue(child.hospitalId)) extractCustomHospitalPhone(child.hospitalId) else "") }
+    var errors by remember { mutableStateOf<List<String>>(emptyList()) }
     var openDropdown by remember { mutableStateOf(OpenDropdown.NONE) }
+    val dialogScrollState = rememberScrollState()
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-        title = { Text("Edit Child Info", fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = LogoBlue) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) })
-                DialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) })
-                SimpleDropdownField(label = "Gender", options = genderOptions, selected = selectedGender, isExpanded = openDropdown == OpenDropdown.GENDER, onExpandChange = { openDropdown = if (it) OpenDropdown.GENDER else OpenDropdown.NONE }, onSelected = { selectedGender = it; openDropdown = OpenDropdown.NONE })
-                MonthDropdownField(selectedMonth = selectedMonth, isExpanded = openDropdown == OpenDropdown.MONTH, onExpandChange = { openDropdown = if (it) OpenDropdown.MONTH else OpenDropdown.NONE }, onMonthSelected = { selectedMonth = it; openDropdown = OpenDropdown.NONE }, label = "Birth Month")
-                DialogField(value = birthYear, label = "Birth Year", keyboardType = KeyboardType.Number, onValueChange = { birthYear = it.filter { ch -> ch.isDigit() }.take(4) })
-                HospitalDropdownField(selectedHospital = selectedHospital, isExpanded = openDropdown == OpenDropdown.HOSPITAL, onExpandChange = { openDropdown = if (it) OpenDropdown.HOSPITAL else OpenDropdown.NONE }, onHospitalSelected = { selectedHospital = it; openDropdown = OpenDropdown.NONE; if (it != OTHER_HOSPITAL_ID) customHospital = "" })
-                if (selectedHospital == OTHER_HOSPITAL_ID) {
-                    DialogField(value = customHospital, label = "Enter Hospital Name", onValueChange = { customHospital = it })
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+                Text(
+                    "Edit Child Info",
+                    fontFamily = InterFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = LogoBlue
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(dialogScrollState),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        DialogField(value = firstName, label = "First Name", onValueChange = { firstName = filterNameInput(it) })
+                        DialogField(value = lastName, label = "Last Name", onValueChange = { lastName = filterNameInput(it) })
+                        SimpleDropdownField(
+                            label = "Gender",
+                            options = genderOptions,
+                            selected = selectedGender,
+                            isExpanded = openDropdown == OpenDropdown.GENDER,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.GENDER else OpenDropdown.NONE },
+                            onSelected = { selectedGender = it; openDropdown = OpenDropdown.NONE }
+                        )
+                        MonthDropdownField(
+                            selectedMonth = selectedMonth,
+                            isExpanded = openDropdown == OpenDropdown.MONTH,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.MONTH else OpenDropdown.NONE },
+                            onMonthSelected = { selectedMonth = it; openDropdown = OpenDropdown.NONE },
+                            label = "Birth Month"
+                        )
+                        DialogField(
+                            value = birthYear,
+                            label = "Birth Year",
+                            keyboardType = KeyboardType.Number,
+                            onValueChange = { birthYear = it.filter { ch -> ch.isDigit() }.take(4) }
+                        )
+                        HospitalDropdownField(
+                            selectedHospital = selectedHospital,
+                            isExpanded = openDropdown == OpenDropdown.HOSPITAL,
+                            onExpandChange = { openDropdown = if (it) OpenDropdown.HOSPITAL else OpenDropdown.NONE },
+                            onHospitalSelected = {
+                                selectedHospital = it
+                                openDropdown = OpenDropdown.NONE
+                                if (it != OTHER_HOSPITAL_ID) {
+                                    customHospital = ""
+                                    customHospitalPhone = ""
+                                }
+                            }
+                        )
+                        if (selectedHospital == OTHER_HOSPITAL_ID) {
+                            DialogField(value = customHospital, label = "Enter Hospital Name", onValueChange = { customHospital = it })
+                            DialogField(
+                                value = customHospitalPhone,
+                                label = "Enter Hospital Phone Number",
+                                keyboardType = KeyboardType.Phone,
+                                onValueChange = { customHospitalPhone = normalisePhoneNumber(it) }
+                            )
+                        }
+                    }
                 }
-                if (error.isNotEmpty()) Text(error, fontFamily = InterFont, fontSize = 12.sp, color = ErrorRed)
+
+                if (errors.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        errors.forEach { errorMsg ->
+                            Text(
+                                text = "• $errorMsg",
+                                fontFamily = InterFont,
+                                fontSize = 12.sp,
+                                color = ErrorRed
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", fontFamily = InterFont, color = LogoBlue)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val validationErrors = collectEditErrors(
+                                firstName, lastName, selectedGender, selectedMonth,
+                                birthYear, selectedHospital, customHospital, customHospitalPhone
+                            )
+                            if (validationErrors.isNotEmpty()) {
+                                errors = validationErrors
+                            } else {
+                                val year = birthYear.toIntOrNull()!!
+                                val gender = selectedGender!!
+                                val hospital = selectedHospital!!
+                                val phone = normalisePhoneNumber(customHospitalPhone)
+                                val finalHospitalValue = if (hospital == OTHER_HOSPITAL_ID) {
+                                    formatCustomHospitalValue(customHospital, phone)
+                                } else {
+                                    hospital
+                                }
+                                onConfirm(
+                                    child.copy(
+                                        firstName = firstName.trim(),
+                                        lastName = lastName.trim(),
+                                        gender = gender,
+                                        birthMonth = selectedMonth,
+                                        birthYear = year,
+                                        hospitalId = finalHospitalValue
+                                    )
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Save", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White)
+                    }
+                }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val year = birthYear.toIntOrNull()
-                    val gender = selectedGender
-                    val hospital = selectedHospital
-                    val now = Calendar.getInstance()
-                    val curYear = now.get(Calendar.YEAR)
-                    val curMonth = now.get(Calendar.MONTH) + 1
-                    val minAllowedYear = curYear - 17
-                    val finalHospitalValue = when {
-                        hospital == OTHER_HOSPITAL_ID && customHospital.trim().isNotBlank() -> formatCustomHospitalValue(customHospital)
-                        hospital != null -> hospital
-                        else -> null
-                    }
-                    when {
-                        firstName.trim().isBlank() || lastName.trim().isBlank() -> error = "Please enter a first and last name."
-                        gender.isNullOrBlank() -> error = "Please select a gender."
-                        selectedMonth !in 1..12 -> error = "Please select a birth month."
-                        year == null || year < 1900 -> error = "Please enter a valid birth year."
-                        hospital.isNullOrBlank() -> error = "Please select a hospital."
-                        hospital == OTHER_HOSPITAL_ID && customHospital.trim().isBlank() -> error = "Please enter the hospital name."
-                        year > curYear || (year == curYear && selectedMonth > curMonth) -> error = "Birth month and year cannot be in the future."
-                        year < minAllowedYear -> error = "This app is for children 17 years and under."
-                        year == minAllowedYear && selectedMonth < curMonth -> error = "This app is for children 17 years and under."
-                        else -> onConfirm(child.copy(firstName = firstName.trim(), lastName = lastName.trim(), gender = gender, birthMonth = selectedMonth, birthYear = year, hospitalId = finalHospitalValue ?: ""))
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
-                shape = RoundedCornerShape(10.dp)
-            ) { Text("Save", fontFamily = InterFont, fontWeight = FontWeight.Bold, color = White) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", fontFamily = InterFont, color = LogoBlue) } }
-    )
+        }
+    }
 }
 
 @Composable
 private fun DialogField(value: String, label: String, keyboardType: KeyboardType = KeyboardType.Text, onValueChange: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         TextField(
-            value = value, onValueChange = onValueChange,
+            value = value,
+            onValueChange = onValueChange,
             placeholder = { Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
             singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
-            colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = TileTextColor, unfocusedTextColor = TileTextColor),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedTextColor = TileTextColor,
+                unfocusedTextColor = TileTextColor
+            ),
             textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
             modifier = Modifier.fillMaxWidth()
         )
@@ -522,15 +853,27 @@ private fun MonthDropdownField(selectedMonth: Int?, isExpanded: Boolean, onExpan
     val displayText = selectedMonth?.let { monthNames.getOrNull(it - 1) } ?: label
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         ExposedDropdownMenuBox(expanded = isExpanded, onExpandedChange = { onExpandChange(it) }, modifier = Modifier.fillMaxWidth()) {
-            TextField(value = displayText, onValueChange = {}, readOnly = true,
+            TextField(
+                value = displayText,
+                onValueChange = {},
+                readOnly = true,
                 placeholder = { Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = if (selectedMonth != null) TileTextColor else PlaceholderColor, unfocusedTextColor = if (selectedMonth != null) TileTextColor else PlaceholderColor),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = if (selectedMonth != null) TileTextColor else PlaceholderColor,
+                    unfocusedTextColor = if (selectedMonth != null) TileTextColor else PlaceholderColor
+                ),
                 textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
                 modifier = Modifier.fillMaxWidth().menuAnchor()
             )
             ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { onExpandChange(false) }) {
-                monthNames.forEachIndexed { index, month -> DropdownMenuItem(text = { Text(month, fontFamily = InterFont) }, onClick = { onMonthSelected(index + 1) }) }
+                monthNames.forEachIndexed { index, month ->
+                    DropdownMenuItem(text = { Text(month, fontFamily = InterFont) }, onClick = { onMonthSelected(index + 1) })
+                }
             }
         }
     }
@@ -542,15 +885,27 @@ private fun SimpleDropdownField(label: String, options: List<String>, selected: 
     val displayText = selected ?: label
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         ExposedDropdownMenuBox(expanded = isExpanded, onExpandedChange = { onExpandChange(it) }, modifier = Modifier.fillMaxWidth()) {
-            TextField(value = displayText, onValueChange = {}, readOnly = true,
+            TextField(
+                value = displayText,
+                onValueChange = {},
+                readOnly = true,
                 placeholder = { Text(label, fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = if (selected != null) TileTextColor else PlaceholderColor, unfocusedTextColor = if (selected != null) TileTextColor else PlaceholderColor),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = if (selected != null) TileTextColor else PlaceholderColor,
+                    unfocusedTextColor = if (selected != null) TileTextColor else PlaceholderColor
+                ),
                 textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
                 modifier = Modifier.fillMaxWidth().menuAnchor()
             )
             ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { onExpandChange(false) }) {
-                options.forEach { item -> DropdownMenuItem(text = { Text(item, fontFamily = InterFont) }, onClick = { onSelected(item) }) }
+                options.forEach { item ->
+                    DropdownMenuItem(text = { Text(item, fontFamily = InterFont) }, onClick = { onSelected(item) })
+                }
             }
         }
     }
@@ -559,18 +914,35 @@ private fun SimpleDropdownField(label: String, options: List<String>, selected: 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HospitalDropdownField(selectedHospital: String?, isExpanded: Boolean, onExpandChange: (Boolean) -> Unit, onHospitalSelected: (String) -> Unit) {
-    val displayText = when { selectedHospital == null -> "Select Hospital"; selectedHospital == OTHER_HOSPITAL_ID -> "Other"; else -> hospitalOptions[selectedHospital] ?: "Select Hospital" }
+    val displayText = when {
+        selectedHospital == null -> "Select Hospital"
+        selectedHospital == OTHER_HOSPITAL_ID -> "Other"
+        else -> hospitalOptions[selectedHospital] ?: "Select Hospital"
+    }
+
     Box(modifier = Modifier.fillMaxWidth().background(color = PillGrey, shape = RoundedCornerShape(12.dp))) {
         ExposedDropdownMenuBox(expanded = isExpanded, onExpandedChange = { onExpandChange(it) }, modifier = Modifier.fillMaxWidth()) {
-            TextField(value = displayText, onValueChange = {}, readOnly = true,
+            TextField(
+                value = displayText,
+                onValueChange = {},
+                readOnly = true,
                 placeholder = { Text("Select Hospital", fontFamily = InterFont, color = PlaceholderColor, fontSize = 14.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = if (selectedHospital != null) TileTextColor else PlaceholderColor, unfocusedTextColor = if (selectedHospital != null) TileTextColor else PlaceholderColor),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = if (selectedHospital != null) TileTextColor else PlaceholderColor,
+                    unfocusedTextColor = if (selectedHospital != null) TileTextColor else PlaceholderColor
+                ),
                 textStyle = LocalTextStyle.current.copy(fontFamily = InterFont, fontWeight = FontWeight.Medium, fontSize = 15.sp),
                 modifier = Modifier.fillMaxWidth().menuAnchor()
             )
             ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { onExpandChange(false) }) {
-                hospitalOptions.forEach { (id, name) -> DropdownMenuItem(text = { Text(name, fontFamily = InterFont) }, onClick = { onHospitalSelected(id) }) }
+                hospitalOptions.forEach { (id, name) ->
+                    DropdownMenuItem(text = { Text(name, fontFamily = InterFont) }, onClick = { onHospitalSelected(id) })
+                }
             }
         }
     }

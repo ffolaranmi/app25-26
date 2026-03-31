@@ -45,7 +45,7 @@ data class TutorialStep(
     val iconRes: Int
 )
 
-val tutorialSteps = listOf(
+val homeTutorialSteps = listOf(
     TutorialStep(
         iconRes = R.drawable.welcome,
         title = "Welcome to SmartVoice",
@@ -84,15 +84,126 @@ val tutorialSteps = listOf(
     TutorialStep(
         iconRes = R.drawable.getstarted,
         title = "You're all set!",
-        description = "That's everything. You can replay this guide any time by tapping the ? button on the home screen."
+        description = "That's everything. You can replay this tutorial at any time by tapping the ? button in the top right corner on each page."
+    )
+)
+
+val recordTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.record,
+        title = "Record",
+        description = "Use this page to capture a new voice sample for analysis."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.record,
+        title = "Before Recording",
+        description = "Ask the patient to hold a steady vowel sound like 'aah' or 'eee' in a quiet space."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
+    )
+)
+
+val resultsTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.results,
+        title = "Results",
+        description = "This page shows the status and outcome of each submitted voice sample."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.results,
+        title = "Sample Status",
+        description = "A recording may appear as Analysing, Ready, or Failed depending on whether processing is still in progress or complete."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
+    )
+)
+
+val accountInfoTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.accountinfo,
+        title = "Account Info",
+        description = "Use this page to view and manage your account details."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.accountinfo,
+        title = "Adults on the Account",
+        description = "You can manage the main account holder and any additional adults linked to the account here."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
+    )
+)
+
+val childInfoTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.childinfo,
+        title = "Child Info",
+        description = "Use this page to add and manage child profiles linked to the account."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.childinfo,
+        title = "Why this matters",
+        description = "Each voice recording is attached to a child profile so results stay organised and easy to review."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
+    )
+)
+
+val faqsTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.faqs,
+        title = "FAQs",
+        description = "This page answers common questions about SmartVoice and how to use it."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.faqs,
+        title = "Getting support",
+        description = "You can also use this page to quickly access NHS 111 or 999 if urgent medical help is needed."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
+    )
+)
+
+val feedbackTutorialSteps = listOf(
+    TutorialStep(
+        iconRes = R.drawable.feedback,
+        title = "Feedback",
+        description = "Use this page to share your thoughts and experiences with SmartVoice."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.feedback,
+        title = "Why feedback matters",
+        description = "Your feedback helps improve the app and make it more helpful for future users."
+    ),
+    TutorialStep(
+        iconRes = R.drawable.getstarted,
+        title = "Need help later?",
+        description = "You can reopen this page guide any time by tapping the ? button in the top right corner."
     )
 )
 
 @Composable
-fun TutorialOverlay(onFinish: () -> Unit) {
-    var currentStep by remember { mutableStateOf(0) }
-    val step = tutorialSteps[currentStep]
-    val isLast = currentStep == tutorialSteps.lastIndex
+fun TutorialOverlay(
+    steps: List<TutorialStep>,
+    onFinish: () -> Unit
+) {
+    var currentStep by remember(steps) { mutableStateOf(0) }
+    val step = steps[currentStep]
+    val isLast = currentStep == steps.lastIndex
     val isFirst = currentStep == 0
 
     AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
@@ -115,7 +226,7 @@ fun TutorialOverlay(onFinish: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    tutorialSteps.forEachIndexed { index, _ ->
+                    steps.forEachIndexed { index, _ ->
                         Box(
                             modifier = Modifier
                                 .size(if (index == currentStep) 10.dp else 7.dp)
@@ -197,7 +308,7 @@ fun TutorialOverlay(onFinish: () -> Unit) {
                                 shape = RoundedCornerShape(14.dp)
                             ) {
                                 Text(
-                                    text = if (isLast) "Get Started" else "Next",
+                                    text = if (isLast) "Got It" else "Next",
                                     fontFamily = InterFont,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 15.sp,

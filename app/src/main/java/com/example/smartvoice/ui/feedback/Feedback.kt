@@ -30,6 +30,8 @@ import com.example.smartvoice.ui.theme.PillGrey
 import com.example.smartvoice.ui.theme.White
 import android.content.Intent
 import android.net.Uri
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -55,6 +57,9 @@ fun FeedbackScreen(
     val context = LocalContext.current
     val googleFormUrl = "https://forms.gle/sVdSmjXAgaHF9UA77"
 
+    var showTutorial by remember { mutableStateOf(false) }
+
+
     GradientBackground {
         Scaffold(
             containerColor = Color.Transparent,
@@ -69,7 +74,7 @@ fun FeedbackScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SmartVoiceTopBar(title = "Feedback", onBack = navigateBack)
+                SmartVoiceTopBar(title = "Feedback", onBack = navigateBack, onHelp = { showTutorial = true })
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -151,4 +156,12 @@ fun FeedbackScreen(
             }
         }
     }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
+    }
+
 }

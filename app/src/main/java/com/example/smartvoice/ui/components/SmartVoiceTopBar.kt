@@ -3,6 +3,7 @@ package com.example.smartvoice.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,9 +29,9 @@ fun SmartVoiceTopBar(
     title: String,
     onBack: () -> Unit,
     enabled: Boolean = true,
-    fontSize: Int = 40
+    fontSize: Int = 40,
+    onHelp: (() -> Unit)? = null
 ) {
-
     val adjustedFontSize = when {
         title.length > 24 -> (fontSize - 14).sp
         title.length > 16 -> (fontSize - 8).sp
@@ -52,6 +53,7 @@ fun SmartVoiceTopBar(
                 modifier = Modifier.size(32.dp)
             )
         }
+
         Text(
             text = title,
             fontFamily = InterFont,
@@ -64,5 +66,21 @@ fun SmartVoiceTopBar(
             lineHeight = (adjustedFontSize.value * 1.1f).sp,
             modifier = Modifier.weight(1f)
         )
+
+        if (onHelp != null) {
+            IconButton(
+                onClick = onHelp,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.HelpOutline,
+                    contentDescription = "Help",
+                    tint = LogoBlue,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.width(36.dp))
+        }
     }
 }

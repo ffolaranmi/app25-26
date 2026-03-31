@@ -81,17 +81,17 @@ private fun isEmailValid(email: String): Pair<Boolean, String> {
 private fun isPasswordValid(password: String, isGenerated: Boolean = false): Pair<Boolean, String> {
     if (isGenerated) {
         val missing = mutableListOf<String>()
-        if (password.length < 8) missing.add("8+ chars")
-        if (!Regex(".*[^A-Za-z0-9].*").matches(password)) missing.add("special char")
-        return if (missing.isEmpty()) Pair(true, "") else Pair(false, "Need: ${missing.joinToString(", ")}")
+        if (password.length < 8) missing.add("8+ characters")
+        if (!Regex(".*[^A-Za-z0-9].*").matches(password)) missing.add("symbol")
+        return if (missing.isEmpty()) Pair(true, "") else Pair(false, "Password must include: ${missing.joinToString(", ")}")
     }
     val missing = mutableListOf<String>()
     if (password.length < 8) missing.add("8+ chars")
-    if (!Regex(".*[a-z].*").matches(password)) missing.add("lowercase")
-    if (!Regex(".*[A-Z].*").matches(password)) missing.add("uppercase")
+    if (!Regex(".*[a-z].*").matches(password)) missing.add("lowercase letter")
+    if (!Regex(".*[A-Z].*").matches(password)) missing.add("uppercase letter")
     if (!Regex(".*\\d.*").matches(password)) missing.add("number")
-    if (!Regex(".*[^A-Za-z0-9].*").matches(password)) missing.add("special char")
-    return if (missing.isEmpty()) Pair(true, "") else Pair(false, "Need: ${missing.joinToString(", ")}")
+    if (!Regex(".*[^A-Za-z0-9].*").matches(password)) missing.add("symbol")
+    return if (missing.isEmpty()) Pair(true, "") else Pair(false, "Password must include: ${missing.joinToString(", ")}")
 }
 
 private fun generateUsernameSuggestions(base: String): List<String> {
@@ -129,7 +129,7 @@ fun SignupScreen(
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
 
-    var useGeneratedPassword by remember { mutableStateOf(true) }
+    var useGeneratedPassword by remember { mutableStateOf(false) }
     var generatedPassword by remember { mutableStateOf(PasswordGenerator.generatePassword()) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
@@ -155,7 +155,7 @@ fun SignupScreen(
     val allFieldsFilled =
         firstName.isNotBlank() &&
                 lastName.isNotBlank() &&
-                ukPhoneDigits.length in 9..10 &&
+                ukPhoneDigits.isNotBlank() &&
                 email.isNotBlank() &&
                 usernameCore.isNotBlank() &&
                 (if (useGeneratedPassword) generatedPassword.isNotBlank() else password.text.isNotBlank()) &&
@@ -189,8 +189,8 @@ fun SignupScreen(
         if (ukPhoneDigits.isBlank()) {
             phoneError = "Required"
             ok = false
-        } else if (ukPhoneDigits.length !in 9..10) {
-            phoneError = "Must be 9 or 10 digits"
+        } else if (ukPhoneDigits.length != 10) {
+            phoneError = "Must be 10 digits"
             ok = false
         }
 
@@ -255,7 +255,7 @@ fun SignupScreen(
         usernameCore = ""
         password = TextFieldValue("")
         confirmPassword = TextFieldValue("")
-        useGeneratedPassword = true
+        useGeneratedPassword = false
         generatedPassword = PasswordGenerator.generatePassword()
         passwordVisible = false
         confirmPasswordVisible = false
@@ -358,7 +358,7 @@ fun SignupScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
-                    SmartVoiceTopBar(title = "Signup", onBack = navigateToLogin, fontSize = 28)
+                    SmartVoiceTopBar(title = "Sign up", onBack = navigateToLogin, fontSize = 28)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     PillOutlinedField(
@@ -439,28 +439,7 @@ fun SignupScreen(
                         )
                     }
 
-                    if (useGeneratedPassword) {
-                        GeneratedPasswordDisplay(
-                            password = generatedPassword,
-                            onRegenerate = {
-                                generatedPassword = PasswordGenerator.generatePassword()
-                                if (submitAttempted) validateAll()
-                            }
-                        )
-                        if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
-
-                        TextButton(
-                            onClick = {
-                                useGeneratedPassword = false
-                                password = TextFieldValue("")
-                                if (submitAttempted) validateAll()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 2.dp)
-                        ) {
-                            Text("Use custom password instead", fontSize = 12.sp, color = LogoBlue)
-                        }
-                    } else {
+                    if (!useGeneratedPassword) {
                         NoCopyPastePasswordField(
                             value = password,
                             onValueChange = { new ->
@@ -474,17 +453,32 @@ fun SignupScreen(
                         )
                         if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
 
-                        TextButton(
+                        PasswordOptionBubbleButton(
+                            text = "Use generated password",
                             onClick = {
                                 useGeneratedPassword = true
                                 generatedPassword = PasswordGenerator.generatePassword()
                                 if (submitAttempted) validateAll()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 2.dp)
-                        ) {
-                            Text("Use generated password instead", fontSize = 12.sp, color = LogoBlue)
-                        }
+                            }
+                        )
+                    } else {
+                        GeneratedPasswordDisplay(
+                            password = generatedPassword,
+                            onRegenerate = {
+                                generatedPassword = PasswordGenerator.generatePassword()
+                                if (submitAttempted) validateAll()
+                            }
+                        )
+                        if (submitAttempted && passwordError.isNotEmpty()) CompactErrorText(passwordError)
+
+                        PasswordOptionBubbleButton(
+                            text = "Use custom password",
+                            onClick = {
+                                useGeneratedPassword = false
+                                password = TextFieldValue("")
+                                if (submitAttempted) validateAll()
+                            }
+                        )
                     }
 
                     NoCopyPastePasswordField(
@@ -791,33 +785,72 @@ private fun UsernameSuggestionsRow(
 }
 
 @Composable
-private fun GeneratedPasswordDisplay(password: String, onRegenerate: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = PillGrey, shape = RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                password,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = Color(0xFF111827),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-            )
-            IconButton(onClick = onRegenerate, modifier = Modifier.size(36.dp)) {
+private fun GeneratedPasswordDisplay(
+    password: String,
+    onRegenerate: () -> Unit
+) {
+    OutlinedTextField(
+        value = password,
+        onValueChange = {},
+        readOnly = true,
+        singleLine = true,
+        textStyle = TextStyle(
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF111827)
+        ),
+        trailingIcon = {
+            IconButton(
+                onClick = onRegenerate,
+                modifier = Modifier.size(40.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Refresh,
                     contentDescription = "Generate new password",
                     tint = LogoBlue,
                     modifier = Modifier.size(20.dp)
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            backgroundColor = PillGrey,
+            textColor = Color(0xFF111827),
+            cursorColor = LogoBlue,
+            focusedBorderColor = BrightBlue,
+            unfocusedBorderColor = Color.Transparent,
+            disabledBorderColor = Color.Transparent
+        )
+    )
+}
+
+@Composable
+private fun PasswordOptionBubbleButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = BrightBlue.copy(alpha = 0.08f)
+        ) {
+            TextButton(
+                onClick = onClick,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.5.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = LogoBlue)
+            ) {
+                Text(
+                    text = text,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -1033,3 +1066,4 @@ private fun GlowingLoginLink(text: String, onClick: () -> Unit) {
         Text(text, fontSize = 13.sp)
     }
 }
+

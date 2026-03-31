@@ -47,6 +47,7 @@ import com.example.smartvoice.ui.theme.LogoBlue
 import com.example.smartvoice.ui.theme.White
 import com.example.smartvoice.ui.tutorial.TutorialOverlay
 import com.example.smartvoice.ui.tutorial.TutorialPrefs
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
 
 private val InterFont = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -91,7 +92,6 @@ fun HomeScreen(
 
     LaunchedEffect(userId) {
         if (userId != -1L && !TutorialPrefs.hasSeen(context, userId)) {
-           // kotlinx.coroutines.delay(300)
             showTutorial = true
         }
     }
@@ -104,7 +104,6 @@ fun HomeScreen(
             accountHolder?.firstLoginFlag == true &&
             children.isEmpty()
         ) {
-           // kotlinx.coroutines.delay(200)
             showFirstLoginDialog = true
         }
     }
@@ -159,7 +158,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Created by Engineering and Humanities\nstudents at the University of Strathclyde.",
+                        text = "Created by Engineering, Science and Humanities\nstudents at the University of Strathclyde.",
                         textAlign = TextAlign.Center,
                         fontFamily = InterFont,
                         fontWeight = FontWeight.Medium,
@@ -222,7 +221,7 @@ fun HomeScreen(
                     }
 
                     Text(
-                        "Add Children",
+                        "Add Child",
                         fontFamily = InterFont,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp,
@@ -231,7 +230,7 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        "Organise voice recordings and track results for your child.",
+                        "Start by adding a child profile. You can add more children to your account at any time.",
                         fontFamily = InterFont,
                         fontSize = 14.sp,
                         color = Color(0xFF4B5563),
@@ -287,6 +286,7 @@ fun HomeScreen(
 
     if (showTutorial) {
         TutorialOverlay(
+            steps = homeTutorialSteps,
             onFinish = {
                 if (userId != -1L) {
                     TutorialPrefs.markSeen(context, userId)

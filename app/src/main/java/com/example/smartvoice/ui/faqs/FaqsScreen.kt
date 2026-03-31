@@ -36,6 +36,8 @@ import com.example.smartvoice.ui.navigation.NavigationDestination
 import com.example.smartvoice.ui.theme.GradientBackground
 import com.example.smartvoice.ui.theme.LightBlue
 import com.example.smartvoice.ui.theme.LogoBlue
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
 
 private val AnswerGrey = Color(0xFFDDE3EC)
 
@@ -59,6 +61,8 @@ fun FaqsScreen(
 ) {
     val context = LocalContext.current
     var expandedIndex by remember { mutableStateOf<Int?>(null) }
+    var showTutorial by remember { mutableStateOf(false) }
+
 
     GradientBackground {
         Scaffold(containerColor = Color.Transparent) { innerPadding ->
@@ -71,7 +75,7 @@ fun FaqsScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SmartVoiceTopBar(title = "FAQs", onBack = navigateToHome)
+                SmartVoiceTopBar(title = "FAQs", onBack = navigateToHome, onHelp = { showTutorial = true })
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -193,6 +197,13 @@ fun FaqsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
     }
 }
 

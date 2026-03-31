@@ -60,6 +60,14 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 
 object RecordDestination : NavigationDestination {
     override val route = "record"
@@ -109,6 +117,7 @@ fun RecordScreen(
     var successMessageText by remember { mutableStateOf("") }
     var isProcessing by remember { mutableStateOf(false) }
     var dontRemindAgain by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     val dontShowPermanently = remember(userId) {
         val prefs = context.getSharedPreferences("smartvoice_prefs", android.content.Context.MODE_PRIVATE)
@@ -164,7 +173,7 @@ fun RecordScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(
-                        "Ask the patient to sustain a steady vowel sound ('aah' or 'eee') for 5 seconds in a quiet environment from a ~20cm distance at 45°.",
+                        "First, tap the microphone to select the child you are recording for and tap Start Recording. The app will automatically start recording a 5-second sample for you.\n\nAsk the patient to sustain a steady vowel /a/ sound ('aah') for the full 5 seconds in a quiet environment, holding the phone approximately \n 20 cm away at a 45° angle.",
                         fontFamily = InterFont,
                         fontWeight = FontWeight.Normal,
                         fontSize = 15.sp,
@@ -380,7 +389,7 @@ fun RecordScreen(
                                                 return@launch
                                             }
 
-                                            successMessageText = "PLEASE WAIT WHILE YOUR \n RECORDING IS BEING PROCESSED"
+                                            successMessageText = "PLEASE WAIT WHILE YOUR \nRECORDING IS BEING PROCESSED"
                                             showSuccessMessage = true
 
                                             val mlScore = withContext(Dispatchers.IO) {
@@ -467,7 +476,8 @@ fun RecordScreen(
                 SmartVoiceTopBar(
                     title = "Recording",
                     onBack = { navigateBack() },
-                    enabled = areButtonsEnabled
+                    enabled = areButtonsEnabled,
+                    onHelp = { showTutorial = true }
                 )
 
                 Column(
@@ -508,7 +518,9 @@ fun RecordScreen(
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    )
+
+                    {
                         ActionSideButton(
                             text = "i",
                             onClick = { showInstructionsDialog = true },
@@ -528,7 +540,9 @@ fun RecordScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Box(
-                        modifier = Modifier.height(60.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .height(90.dp)
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         androidx.compose.animation.AnimatedVisibility(
@@ -536,26 +550,37 @@ fun RecordScreen(
                             enter = fadeIn(animationSpec = tween(300)),
                             exit = fadeOut(animationSpec = tween(300))
                         ) {
-                            if (successMessageText == "PLEASE WAIT WHILE YOUR \n RECORDING IS BEING PROCESSED") {
+                            if (successMessageText == "PLEASE WAIT WHILE YOUR \nRECORDING IS BEING PROCESSED") {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(text = successMessageText, fontFamily = InterFont, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BrightBlue, textAlign = TextAlign.Center)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        repeat(3) { index ->
-                                            val dotTransition = rememberInfiniteTransition(label = "dot_$index")
-                                            val scale by dotTransition.animateFloat(
-                                                initialValue = 1f, targetValue = 1.5f,
-                                                animationSpec = infiniteRepeatable(animation = tween(600, delayMillis = index * 150), repeatMode = RepeatMode.Reverse),
-                                                label = "dot_scale_$index"
-                                            )
-                                            Box(modifier = Modifier.size(6.dp).scale(scale).clip(CircleShape).background(BrightBlue))
-                                        }
-                                    }
+                                    Text(
+                                        text = successMessageText,
+                                        fontFamily = InterFont,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = LogoBlue,
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    SoundWaveLoader(
+                                        color = LogoBlue,
+                                        bars = 9,
+                                        modifier = Modifier
+                                            .height(16.dp)
+                                            .wrapContentWidth()
+                                    )
                                 }
                             } else {
-                                Text(text = successMessageText, fontFamily = InterFont, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = BrightBlue, textAlign = TextAlign.Center)
+                                Text(
+                                    text = successMessageText,
+                                    fontFamily = InterFont,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LogoBlue,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }
@@ -566,6 +591,14 @@ fun RecordScreen(
             }
         }
     }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
+    }
+
 }
 
 @Composable
@@ -580,6 +613,53 @@ private fun ActionSideButton(text: String, onClick: () -> Unit, enabled: Boolean
         Text(text = text, fontFamily = InterFont, fontWeight = FontWeight.ExtraBold, fontSize = 52.sp, color = if (enabled) BrightBlue else BrightBlue.copy(alpha = 0.5f))
     }
 }
+@Composable
+private fun SoundWaveLoader(
+    modifier: Modifier = Modifier,
+    color: Color,
+    bars: Int = 9
+) {
+    val transition = rememberInfiniteTransition(label = "wave")
+
+    val heights = (0 until bars).map { i ->
+        val delay = i * 60
+        transition.animateFloat(
+            initialValue = 0.2f,
+            targetValue = 1.0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = 550,
+                    delayMillis = delay,
+                    easing = FastOutSlowInEasing
+                ),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "bar$i"
+        )
+    }
+
+    Row(
+        modifier = modifier.alpha(0.95f),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        heights.forEach { h ->
+            val heightDp = (14.dp * h.value).coerceAtLeast(4.dp)
+
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(heightDp)
+                    .background(
+                        color = color,
+                        shape = RoundedCornerShape(50)
+                    )
+            )
+        }
+    }
+}
+
+
 
 @Composable
 private fun ActionSideIconButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier, painterRes: Int, contentDescription: String) {

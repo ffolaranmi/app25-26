@@ -62,6 +62,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import com.example.smartvoice.ui.tutorial.TutorialOverlay
+import com.example.smartvoice.ui.tutorial.homeTutorialSteps
 
 object AddAdultDestination : NavigationDestination {
     override val route = "addAdult"
@@ -203,6 +205,7 @@ fun AccountInfoScreen(
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showAddAdultDialog by remember { mutableStateOf(false) }
     var showDeleteAdultDialog by remember { mutableStateOf<User?>(null) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId != -1L) {
@@ -270,7 +273,7 @@ fun AccountInfoScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                SmartVoiceTopBar(title = "Account Info", onBack = navigateToHome)
+                SmartVoiceTopBar(title = "Account Info", onBack = navigateToHome, onHelp = { showTutorial = true })
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (adults.isEmpty()) {
@@ -311,6 +314,13 @@ fun AccountInfoScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
     }
 }
 
@@ -497,6 +507,7 @@ fun AdultDetailScreen(adultId: Long, database: SmartVoiceDatabase, navigateBack:
     val isAccountHolder = adult != null && adult?.id == accountHolder?.id
     var showManageDialog by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
 
     LaunchedEffect(adultId) { vm.loadAdultById(adultId) }
 
@@ -515,7 +526,8 @@ fun AdultDetailScreen(adultId: Long, database: SmartVoiceDatabase, navigateBack:
                         else
                             "${it.firstName} ${it.lastName}".trim()
                     } ?: "Adult",
-                    onBack = navigateBack
+                    onBack = navigateBack,
+                    onHelp = { showTutorial = true }
                 )
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -555,6 +567,13 @@ fun AdultDetailScreen(adultId: Long, database: SmartVoiceDatabase, navigateBack:
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialOverlay(
+            steps = homeTutorialSteps,
+            onFinish = { showTutorial = false }
+        )
     }
 }
 
